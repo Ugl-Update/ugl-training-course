@@ -448,9 +448,12 @@ figure.fig figcaption{margin-top:13px;font-size:13.5px;color:var(--ink-2);text-a
   .themebtn{top:11px;right:66px;width:36px;height:36px;z-index:56;font-size:15px}
 }
 
-.homebtn{position:fixed;top:12px;right:62px;z-index:56;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.14);background:rgba(15,16,17,.82);color:#aeb8b4;cursor:pointer;border-radius:10px;padding:8px 11px;font-size:11px;font-weight:700;letter-spacing:.5px;text-decoration:none;transition:all .14s;white-space:nowrap;font-family:'Overpass',system-ui,sans-serif}
-.homebtn:hover{border-color:var(--highway);color:#fff;background:rgba(181,48,43,.18)}
-@media(max-width:900px){.homebtn{top:11px;right:66px;padding:7px 9px;font-size:10px}}
+
+.brand__mark .homebtn{margin-left:auto;padding:7px 12px;font-size:10px}
+.topbar .homebtn{margin-left:auto;padding:6px 11px;font-size:10px}
+.homebtn{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(181,48,43,.45);background:rgba(181,48,43,.12);color:#f0c4c1;font-size:10px;font-weight:700;letter-spacing:.7px;text-decoration:none;text-transform:uppercase;transition:all .18s;white-space:nowrap;font-family:'Overpass',system-ui,sans-serif}
+.homebtn:hover{background:var(--highway);border-color:var(--highway);color:#fff;transform:translateY(-1px)}
+
 
 </style>
 </head>
@@ -536,10 +539,10 @@ figure.fig figcaption{margin-top:13px;font-size:13.5px;color:var(--ink-2);text-a
 <div id="progress-track"><div id="progress"></div></div>
 <button class="themebtn" id="themebtn" aria-label="Toggle dark mode">&#9790;</button>
 
-<a class="homebtn" href="index.html" title="Back to course menu">← Menu</a>
 <header class="topbar">
   <div class="logomark">UGL</div>
   <span class="brand__t1">ROADBOOK</span>
+  <a class="homebtn" href="index.html" title="Back to course menu">Course menu</a>
   <button id="navtoggle" aria-label="Toggle navigation"><span></span></button>
 </header>
 
@@ -551,6 +554,7 @@ figure.fig figcaption{margin-top:13px;font-size:13.5px;color:var(--ink-2);text-a
         <div class="brand__t1">DISPATCH</div>
         <div class="brand__t2">ROADBOOK</div>
       </div>
+      <a class="homebtn" href="index.html" title="Back to course menu">Course menu</a>
     </div>
     <div class="brand__tag">Freight &amp; Dispatch Training</div>
   </div>
@@ -1385,7 +1389,6 @@ function bindCardPhotos(){
   document.querySelectorAll('img[data-rb]').forEach(function(img){
     var k=img.getAttribute('data-rb');
     img.removeAttribute('loading');
-    if(typeof RBIMG!=='undefined'&&RBIMG[k]){img.src=RBIMG[k];return;}
     img.src='roadbook-assets/'+k+'.jpg';
     img.onerror=function(){
       if(typeof RBIMG!=='undefined'&&RBIMG[k]) this.src=RBIMG[k];
