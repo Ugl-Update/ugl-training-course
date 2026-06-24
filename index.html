@@ -63,6 +63,48 @@
   </style>
 </head>
 <body>
+<div id="ugl-pass-gate" style="position:fixed;inset:0;z-index:999999;background:#0d0d0d;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;">
+  <div style="background:#1a1a1a;padding:40px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);text-align:center;max-width:320px;width:90%;">
+    <h2 style="color:#fff;margin:0 0 20px;font-size:18px;font-weight:600;">UGL Training Access</h2>
+    <input type="password" id="ugl-pass-input" placeholder="Enter password"
+      style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0d0d0d;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:12px;">
+    <button onclick="uglCheckPass()"
+      style="width:100%;padding:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">
+      Enter
+    </button>
+    <p id="ugl-pass-error" style="color:#ef4444;font-size:13px;margin:12px 0 0;display:none;">Incorrect password</p>
+  </div>
+</div>
+
+<style>
+  body.ugl-locked { overflow: hidden; }
+</style>
+
+<script>
+  document.body.classList.add('ugl-locked');
+  const UGL_PASS = "UGLUPDATE2002";
+
+  function uglCheckPass() {
+    const input = document.getElementById('ugl-pass-input').value;
+    if (input === UGL_PASS) {
+      document.body.classList.remove('ugl-locked');
+      document.getElementById('ugl-pass-gate').remove();
+      sessionStorage.setItem('ugl_unlocked', 'true');
+    } else {
+      document.getElementById('ugl-pass-error').style.display = 'block';
+    }
+  }
+
+  document.getElementById('ugl-pass-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') uglCheckPass();
+  });
+
+  if (sessionStorage.getItem('ugl_unlocked') === 'true') {
+    document.body.classList.remove('ugl-locked');
+    document.getElementById('ugl-pass-gate').remove();
+  }
+</script>
+
   <div class="container">
     <h1>UGL Training Course</h1>
     <p class="subtitle">Select a module to begin.</p>

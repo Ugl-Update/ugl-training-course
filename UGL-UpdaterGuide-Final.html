@@ -231,12 +231,18 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
 </div>
 
 <style>
-  body.ugl-locked > *:not(#ugl-pass-gate) { display: none !important; }
+  body.ugl-locked { overflow: hidden; }
 </style>
 
 <script>
   document.body.classList.add('ugl-locked');
   const UGL_PASS = "UGLUPDATE2002";
+
+  function uglRefreshAfterUnlock() {
+    setTimeout(function() {
+      if (typeof render === 'function') render();
+    }, 0);
+  }
 
   function uglCheckPass() {
     const input = document.getElementById('ugl-pass-input').value;
@@ -244,6 +250,7 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
       document.body.classList.remove('ugl-locked');
       document.getElementById('ugl-pass-gate').remove();
       sessionStorage.setItem('ugl_unlocked', 'true');
+      uglRefreshAfterUnlock();
     } else {
       document.getElementById('ugl-pass-error').style.display = 'block';
     }
