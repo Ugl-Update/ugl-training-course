@@ -189,6 +189,10 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
   .slabel{font-size:8px}.stepper-zone{padding:9px 12px 11px}
   .np-scrub{width:80px}.np-time{min-width:64px}
 }
+
+.homebtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2,rgba(255,255,255,.14));background:transparent;color:var(--light,var(--gray,#80848C));cursor:pointer;border-radius:7px;padding:7px 11px;font-size:11px;font-weight:700;letter-spacing:.5px;text-decoration:none;transition:all .14s;white-space:nowrap}
+.homebtn:hover{border-color:var(--red,#B5302B);color:var(--white,#F3F4F6);background:rgba(181,48,43,.12)}
+
 </style>
 <style id="deck-image-override">
 /* PER-DECK ONLY — show full image content (object-fit:contain), no click needed. */
@@ -217,21 +221,36 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
 </style>
 </head>
 <body>
-<div id="ugl-pass-gate" style="position:fixed;inset:0;z-index:999999;background:#0d0d0d;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;">
-  <div style="background:#1a1a1a;padding:40px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);text-align:center;max-width:320px;width:90%;">
-    <h2 style="color:#fff;margin:0 0 20px;font-size:18px;font-weight:600;">UGL Training Access</h2>
-    <input type="password" id="ugl-pass-input" placeholder="Enter password"
-      style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0d0d0d;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:12px;">
-    <button onclick="uglCheckPass()"
-      style="width:100%;padding:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">
-      Enter
-    </button>
-    <p id="ugl-pass-error" style="color:#ef4444;font-size:13px;margin:12px 0 0;display:none;">Incorrect password</p>
+<div id="ugl-pass-gate" class="ugl-gate">
+  <div class="ugl-gate__panel">
+    <div class="ugl-gate__logo"><div class="ugl-gate__mark">UGL</div><div class="ugl-gate__brand"><div class="ugl-gate__t1">DISPATCH</div><div class="ugl-gate__t2">TRAINING ACCESS</div></div></div>
+    <p class="ugl-gate__lead">Enter your team password to open the course.</p>
+    <input type="password" id="ugl-pass-input" class="ugl-gate__input" placeholder="Enter password" autocomplete="current-password">
+    <button type="button" class="ugl-gate__btn" onclick="uglCheckPass()">Enter Course</button>
+    <p id="ugl-pass-error" class="ugl-gate__error">Incorrect password</p>
   </div>
 </div>
 
 <style>
-  body.ugl-locked { overflow: hidden; }
+  :root{--ugl-bg:#0F1011;--ugl-panel:#16171A;--ugl-card:#1D1F23;--ugl-red:#B5302B;--ugl-red2:#c93a35;--ugl-white:#F3F4F6;--ugl-gray:#80848C;--ugl-line:rgba(255,255,255,.08)}
+  body.ugl-locked{overflow:hidden}
+  .ugl-gate{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--ugl-bg);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;animation:uglGateIn .45s ease both}
+  .ugl-gate::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(181,48,43,.12),transparent 55%)}
+  .ugl-gate__panel{position:relative;width:min(380px,92vw);padding:34px 30px 28px;border-radius:16px;background:linear-gradient(180deg,var(--ugl-panel),var(--ugl-card));border:1px solid var(--ugl-line);box-shadow:0 24px 64px rgba(0,0,0,.45);text-align:center;animation:uglPanelIn .55s cubic-bezier(.2,.8,.2,1) .08s both}
+  .ugl-gate__logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px}
+  .ugl-gate__mark{width:46px;height:46px;border-radius:10px;background:var(--ugl-red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:1px}
+  .ugl-gate__t1{color:var(--ugl-white);font-weight:800;font-size:17px;letter-spacing:1px;line-height:1;text-align:left}
+  .ugl-gate__t2{color:var(--ugl-gray);font-weight:700;font-size:10px;letter-spacing:2.2px;margin-top:3px;text-align:left}
+  .ugl-gate__lead{color:var(--ugl-gray);font-size:14px;line-height:1.5;margin:0 0 18px}
+  .ugl-gate__input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b0c0d;color:var(--ugl-white);font-size:16px;box-sizing:border-box;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
+  .ugl-gate__input:focus{outline:none;border-color:rgba(181,48,43,.65);box-shadow:0 0 0 3px rgba(181,48,43,.18)}
+  .ugl-gate__btn{width:100%;padding:13px 16px;border:none;border-radius:10px;background:var(--ugl-red);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:transform .15s,background .15s,box-shadow .15s}
+  .ugl-gate__btn:hover{background:var(--ugl-red2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(181,48,43,.28)}
+  .ugl-gate__error{color:#ef4444;font-size:13px;margin:12px 0 0;display:none}
+  @keyframes uglGateIn{from{opacity:0}to{opacity:1}}
+  @keyframes uglPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  body.ugl-unlocked .wrap,body.ugl-unlocked .container,body.ugl-unlocked #progress-track,body.ugl-unlocked .themebtn,body.ugl-unlocked .topbar,body.ugl-unlocked .sidebar,body.ugl-unlocked #content{animation:uglContentIn .45s ease both}
+  @keyframes uglContentIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 </style>
 
 <script>
@@ -241,16 +260,28 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
   function uglRefreshAfterUnlock() {
     setTimeout(function() {
       if (typeof render === 'function') render();
+      if (typeof window.uglRoadbookRefresh === 'function') window.uglRoadbookRefresh();
     }, 0);
+  }
+
+  function uglFinishUnlock() {
+    document.body.classList.remove('ugl-locked');
+    document.body.classList.add('ugl-unlocked');
+    var gate = document.getElementById('ugl-pass-gate');
+    if (gate) {
+      gate.style.transition = 'opacity .35s ease, transform .35s ease';
+      gate.style.opacity = '0';
+      gate.style.transform = 'scale(.98)';
+      setTimeout(function() { gate.remove(); }, 360);
+    }
+    sessionStorage.setItem('ugl_unlocked', 'true');
+    uglRefreshAfterUnlock();
   }
 
   function uglCheckPass() {
     const input = document.getElementById('ugl-pass-input').value;
     if (input === UGL_PASS) {
-      document.body.classList.remove('ugl-locked');
-      document.getElementById('ugl-pass-gate').remove();
-      sessionStorage.setItem('ugl_unlocked', 'true');
-      uglRefreshAfterUnlock();
+      uglFinishUnlock();
     } else {
       document.getElementById('ugl-pass-error').style.display = 'block';
     }
@@ -261,8 +292,10 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
   });
 
   if (sessionStorage.getItem('ugl_unlocked') === 'true') {
+    var g = document.getElementById('ugl-pass-gate');
+    if (g) g.remove();
     document.body.classList.remove('ugl-locked');
-    document.getElementById('ugl-pass-gate').remove();
+    document.body.classList.add('ugl-unlocked');
   }
 </script>
 
@@ -277,6 +310,7 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
         <button class="np-btn" id="npSpeed" title="Playback speed">1×</button>
         <button class="np-btn" id="npAuto" title="Auto-play narration when you move to each step">AUTO</button>
       </div>
+      <a class="homebtn" href="index.html" title="Back to course menu">← Menu</a>
       <button class="themebtn" id="themeBtn" title="Toggle light / dark"></button>
     </div>
   </div>

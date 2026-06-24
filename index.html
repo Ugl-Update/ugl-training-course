@@ -5,91 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UGL Training Course</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      min-height: 100vh;
-      background: #0d0d0d;
-      color: #e5e5e5;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-    .container {
-      max-width: 520px;
-      width: 100%;
-    }
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .subtitle {
-      color: #888;
-      font-size: 0.95rem;
-      margin-bottom: 32px;
-    }
-    ul {
-      list-style: none;
-    }
-    li + li {
-      margin-top: 12px;
-    }
-    a {
-      display: block;
-      padding: 16px 20px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      color: #fff;
-      text-decoration: none;
-      font-size: 1rem;
-      font-weight: 500;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    a:hover {
-      border-color: #2563eb;
-      background: #1f1f1f;
-    }
-    a span {
-      color: #2563eb;
-      font-size: 0.85rem;
-      display: block;
-      margin-top: 4px;
-      font-weight: 400;
-    }
+    :root{--bg:#0F1011;--panel:#16171A;--card:#17181B;--card2:#1D1F23;--white:#F3F4F6;--gray:#80848C;--red:#B5302B;--red2:#c93a35;--line:rgba(255,255,255,.07)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{min-height:100%}
+    body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white)}
+    body.ugl-unlocked .page{animation:pageIn .5s ease both}
+    @keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    .page{min-height:100vh;display:flex;flex-direction:column}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.28)}
+    .logo{display:flex;align-items:center;gap:11px}
+    .logomark{width:42px;height:42px;border-radius:9px;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:1px}
+    .logo-txt .t1{font-weight:800;font-size:17px;letter-spacing:1px;line-height:1}
+    .logo-txt .t2{font-weight:700;font-size:10px;letter-spacing:2.2px;color:var(--gray);margin-top:3px}
+    .tag{font-size:11px;color:var(--gray);letter-spacing:.12em;text-transform:uppercase}
+    .hero{max-width:760px;margin:0 auto;padding:42px 24px 10px;text-align:center}
+    .hero h1{font-size:clamp(2rem,5vw,2.6rem);font-weight:800;letter-spacing:.5px;margin-bottom:10px}
+    .hero p{color:var(--gray);font-size:1rem;line-height:1.6}
+    .modules{max-width:760px;margin:0 auto;padding:10px 24px 56px;width:100%}
+    .modules ul{list-style:none;display:grid;gap:12px}
+    .modules li{animation:cardIn .45s ease both}
+    .modules li:nth-child(1){animation-delay:.05s}
+    .modules li:nth-child(2){animation-delay:.10s}
+    .modules li:nth-child(3){animation-delay:.15s}
+    .modules li:nth-child(4){animation-delay:.20s}
+    .modules li:nth-child(5){animation-delay:.25s}
+    @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .modules a{display:block;padding:18px 20px;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:14px;color:var(--white);text-decoration:none;transition:transform .18s,border-color .18s,box-shadow .18s,background .18s}
+    .modules a:hover{transform:translateY(-2px);border-color:rgba(181,48,43,.45);box-shadow:0 14px 34px rgba(0,0,0,.28);background:linear-gradient(180deg,#1a1b1f,#22252b)}
+    .modules a strong{display:block;font-size:1.05rem;font-weight:700;margin-bottom:5px}
+    .modules a span{display:block;color:#d4a574;font-size:.88rem;line-height:1.45}
+    .foot{text-align:center;color:#5f656d;font-size:12px;padding:0 24px 28px}
   </style>
 </head>
 <body>
-<div id="ugl-pass-gate" style="position:fixed;inset:0;z-index:999999;background:#0d0d0d;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;">
-  <div style="background:#1a1a1a;padding:40px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);text-align:center;max-width:320px;width:90%;">
-    <h2 style="color:#fff;margin:0 0 20px;font-size:18px;font-weight:600;">UGL Training Access</h2>
-    <input type="password" id="ugl-pass-input" placeholder="Enter password"
-      style="width:100%;padding:12px;border-radius:6px;border:1px solid #333;background:#0d0d0d;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:12px;">
-    <button onclick="uglCheckPass()"
-      style="width:100%;padding:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">
-      Enter
-    </button>
-    <p id="ugl-pass-error" style="color:#ef4444;font-size:13px;margin:12px 0 0;display:none;">Incorrect password</p>
+<div id="ugl-pass-gate" class="ugl-gate">
+  <div class="ugl-gate__panel">
+    <div class="ugl-gate__logo"><div class="ugl-gate__mark">UGL</div><div class="ugl-gate__brand"><div class="ugl-gate__t1">DISPATCH</div><div class="ugl-gate__t2">TRAINING ACCESS</div></div></div>
+    <p class="ugl-gate__lead">Enter your team password to open the course.</p>
+    <input type="password" id="ugl-pass-input" class="ugl-gate__input" placeholder="Enter password" autocomplete="current-password">
+    <button type="button" class="ugl-gate__btn" onclick="uglCheckPass()">Enter Course</button>
+    <p id="ugl-pass-error" class="ugl-gate__error">Incorrect password</p>
   </div>
 </div>
 
 <style>
-  body.ugl-locked { overflow: hidden; }
+  :root{--ugl-bg:#0F1011;--ugl-panel:#16171A;--ugl-card:#1D1F23;--ugl-red:#B5302B;--ugl-red2:#c93a35;--ugl-white:#F3F4F6;--ugl-gray:#80848C;--ugl-line:rgba(255,255,255,.08)}
+  body.ugl-locked{overflow:hidden}
+  .ugl-gate{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--ugl-bg);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;animation:uglGateIn .45s ease both}
+  .ugl-gate::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(181,48,43,.12),transparent 55%)}
+  .ugl-gate__panel{position:relative;width:min(380px,92vw);padding:34px 30px 28px;border-radius:16px;background:linear-gradient(180deg,var(--ugl-panel),var(--ugl-card));border:1px solid var(--ugl-line);box-shadow:0 24px 64px rgba(0,0,0,.45);text-align:center;animation:uglPanelIn .55s cubic-bezier(.2,.8,.2,1) .08s both}
+  .ugl-gate__logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px}
+  .ugl-gate__mark{width:46px;height:46px;border-radius:10px;background:var(--ugl-red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:1px}
+  .ugl-gate__t1{color:var(--ugl-white);font-weight:800;font-size:17px;letter-spacing:1px;line-height:1;text-align:left}
+  .ugl-gate__t2{color:var(--ugl-gray);font-weight:700;font-size:10px;letter-spacing:2.2px;margin-top:3px;text-align:left}
+  .ugl-gate__lead{color:var(--ugl-gray);font-size:14px;line-height:1.5;margin:0 0 18px}
+  .ugl-gate__input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b0c0d;color:var(--ugl-white);font-size:16px;box-sizing:border-box;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
+  .ugl-gate__input:focus{outline:none;border-color:rgba(181,48,43,.65);box-shadow:0 0 0 3px rgba(181,48,43,.18)}
+  .ugl-gate__btn{width:100%;padding:13px 16px;border:none;border-radius:10px;background:var(--ugl-red);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:transform .15s,background .15s,box-shadow .15s}
+  .ugl-gate__btn:hover{background:var(--ugl-red2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(181,48,43,.28)}
+  .ugl-gate__error{color:#ef4444;font-size:13px;margin:12px 0 0;display:none}
+  @keyframes uglGateIn{from{opacity:0}to{opacity:1}}
+  @keyframes uglPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  body.ugl-unlocked .wrap,body.ugl-unlocked .container,body.ugl-unlocked #progress-track,body.ugl-unlocked .themebtn,body.ugl-unlocked .topbar,body.ugl-unlocked .sidebar,body.ugl-unlocked #content{animation:uglContentIn .45s ease both}
+  @keyframes uglContentIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 </style>
 
 <script>
   document.body.classList.add('ugl-locked');
   const UGL_PASS = "UGLUPDATE2002";
 
+  function uglRefreshAfterUnlock() {
+    setTimeout(function() {
+      if (typeof render === 'function') render();
+      if (typeof window.uglRoadbookRefresh === 'function') window.uglRoadbookRefresh();
+    }, 0);
+  }
+
+  function uglFinishUnlock() {
+    document.body.classList.remove('ugl-locked');
+    document.body.classList.add('ugl-unlocked');
+    var gate = document.getElementById('ugl-pass-gate');
+    if (gate) {
+      gate.style.transition = 'opacity .35s ease, transform .35s ease';
+      gate.style.opacity = '0';
+      gate.style.transform = 'scale(.98)';
+      setTimeout(function() { gate.remove(); }, 360);
+    }
+    sessionStorage.setItem('ugl_unlocked', 'true');
+    uglRefreshAfterUnlock();
+  }
+
   function uglCheckPass() {
     const input = document.getElementById('ugl-pass-input').value;
     if (input === UGL_PASS) {
-      document.body.classList.remove('ugl-locked');
-      document.getElementById('ugl-pass-gate').remove();
-      sessionStorage.setItem('ugl_unlocked', 'true');
+      uglFinishUnlock();
     } else {
       document.getElementById('ugl-pass-error').style.display = 'block';
     }
@@ -100,46 +109,35 @@
   });
 
   if (sessionStorage.getItem('ugl_unlocked') === 'true') {
+    var g = document.getElementById('ugl-pass-gate');
+    if (g) g.remove();
     document.body.classList.remove('ugl-locked');
-    document.getElementById('ugl-pass-gate').remove();
+    document.body.classList.add('ugl-unlocked');
   }
 </script>
 
-  <div class="container">
-    <h1>UGL Training Course</h1>
-    <p class="subtitle">Select a module to begin.</p>
-    <ul>
-      <li>
-        <a href="UGL-Dispatch-Roadbook-Final.html">
-          Dispatch Roadbook
-          <span>Operations reference deck</span>
-        </a>
-      </li>
-      <li>
-        <a href="UGL-HowToReadTheRC-Final.html">
-          How To Read The RC
-          <span>Rate confirmation guide</span>
-        </a>
-      </li>
-      <li>
-        <a href="UGL-HowToSendAnEmail-Final.html">
-          How To Send An Email
-          <span>Email workflow training</span>
-        </a>
-      </li>
-      <li>
-        <a href="UGL-PickUpChecklist-Final.html">
-          Pick Up Checklist
-          <span>Pickup procedures checklist</span>
-        </a>
-      </li>
-      <li>
-        <a href="UGL-UpdaterGuide-Final.html">
-          Updater Guide
-          <span>Load update procedures</span>
-        </a>
-      </li>
-    </ul>
+  <div class="page">
+    <header class="topbar">
+      <div class="logo">
+        <div class="logomark">UGL</div>
+        <div class="logo-txt"><div class="t1">DISPATCH</div><div class="t2">TRAINING COURSE</div></div>
+      </div>
+      <div class="tag">Internal modules</div>
+    </header>
+    <section class="hero">
+      <h1>UGL Training Course</h1>
+      <p>Select a module below. Each deck opens in this tab with narration, slides, and reference material.</p>
+    </section>
+    <nav class="modules" aria-label="Training modules">
+      <ul>
+        <li><a href="UGL-Dispatch-Roadbook-Final.html"><strong>Dispatch Roadbook</strong><span>Operations reference deck — freight, equipment, compliance, and workflow</span></a></li>
+        <li><a href="UGL-UpdaterGuide-Final.html"><strong>Updater Guide</strong><span>Load update procedures and daily updater workflow</span></a></li>
+        <li><a href="UGL-HowToReadTheRC-Final.html"><strong>How To Read The RC</strong><span>Rate confirmation guide — line by line</span></a></li>
+        <li><a href="UGL-HowToSendAnEmail-Final.html"><strong>How To Send An Email</strong><span>Email workflow training for dispatch</span></a></li>
+        <li><a href="UGL-PickUpChecklist-Final.html"><strong>Pick Up Checklist</strong><span>Pickup procedures checklist</span></a></li>
+      </ul>
+    </nav>
+    <p class="foot">UGL Dispatch Training · password required once per browser tab</p>
   </div>
 </body>
 </html>
