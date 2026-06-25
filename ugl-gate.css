@@ -1,0 +1,78 @@
+:root{
+  --ugl-red:#cf3b30;
+  --ugl-red-hover:#e24a3e;
+  --ugl-bg:#0a0a0b;
+  --ugl-panel:#151517;
+  --ugl-ink:#f4f4f5;
+  --ugl-muted:#9a9aa3;
+  --ugl-dim:#5e5e66;
+  --ugl-faint:#45454d;
+  --ugl-line:rgba(255,255,255,.08);
+}
+@keyframes ugl-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.85)}}
+@keyframes ugl-fade-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ugl-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes uglGateOut{to{opacity:0;transform:scale(.98)}}
+body.ugl-locked{overflow:hidden}
+.ugl-gate{
+  position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(125% 80% at 72% -12%,rgba(207,59,48,.11),rgba(207,59,48,0) 52%),var(--ugl-bg);
+  color:var(--ugl-ink);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  animation:ugl-fade-in .45s ease both;
+}
+.ugl-gate__wrap{width:100%;max-width:432px;animation:ugl-fade-up .5s ease both}
+.ugl-gate__badge{
+  display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:20px;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--ugl-dim);
+}
+.ugl-gate__badge-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--ugl-red);
+  box-shadow:0 0 8px rgba(207,59,48,.7);animation:ugl-pulse 1.9s ease-in-out infinite;
+}
+.ugl-gate__panel{
+  position:relative;background:var(--ugl-panel);border:1px solid var(--ugl-line);border-radius:16px;
+  padding:38px 36px 32px;overflow:hidden;box-shadow:0 30px 70px -30px rgba(0,0,0,.8);
+}
+.ugl-gate__panel::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--ugl-red),#7a2a24 80%,transparent);
+}
+.ugl-gate__logo{display:flex;align-items:center;gap:13px;margin-bottom:24px}
+.ugl-gate__mark{
+  width:48px;height:48px;border-radius:12px;background:var(--ugl-red);display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:.01em;
+  box-shadow:0 6px 18px rgba(207,59,48,.4);
+}
+.ugl-gate__t1{font-weight:800;font-size:19px;letter-spacing:.05em;line-height:1;color:var(--ugl-ink)}
+.ugl-gate__t2{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--ugl-dim);margin-top:6px}
+.ugl-gate__lead{font-size:14px;color:var(--ugl-muted);line-height:1.55;margin:0 0 26px}
+.ugl-gate__label{
+  display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;
+  color:var(--ugl-dim);margin-bottom:10px;
+}
+.ugl-gate__input{
+  width:100%;background:#0e0e10;border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  padding:14px 16px;color:var(--ugl-ink);font-family:'IBM Plex Mono',monospace;font-size:15px;
+  letter-spacing:.18em;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;
+}
+.ugl-gate__input::placeholder{color:var(--ugl-faint)}
+.ugl-gate__input:focus{border-color:var(--ugl-red);box-shadow:0 0 0 3px rgba(207,59,48,.16)}
+.ugl-gate__error{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.02em;color:#e2655b;
+  margin:11px 0 0;display:none;
+}
+.ugl-gate__btn{
+  width:100%;margin-top:18px;background:var(--ugl-red);color:#fff;border:none;border-radius:10px;
+  padding:15px;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:9px;transition:background .15s,transform .08s;
+}
+.ugl-gate__btn:hover{background:var(--ugl-red-hover)}
+.ugl-gate__btn:active{transform:translateY(1px)}
+.ugl-gate__btn-arrow{font-family:'IBM Plex Mono',monospace;font-weight:500}
+.ugl-gate__foot{
+  text-align:center;margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+  letter-spacing:.14em;color:var(--ugl-faint);
+}
+.ugl-gate.is-leaving{animation:uglGateOut .35s ease forwards;pointer-events:none}
+body.ugl-unlocked .wrap,body.ugl-unlocked .container,body.ugl-unlocked #progress-track,body.ugl-unlocked .themebtn,body.ugl-unlocked .topbar,body.ugl-unlocked .sidebar,body.ugl-unlocked #content{animation:uglContentIn .45s ease both}
+@keyframes uglContentIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}

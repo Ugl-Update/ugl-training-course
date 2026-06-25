@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UGL Dispatch — Module Template</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ugl-gate.css">
 <style>
 
 
@@ -226,83 +230,92 @@ figcaption{color:var(--gray);font-size:12px;line-height:1.45;margin-top:7px}
 </head>
 <body>
 <div id="ugl-pass-gate" class="ugl-gate">
-  <div class="ugl-gate__panel">
-    <div class="ugl-gate__logo"><div class="ugl-gate__mark">UGL</div><div class="ugl-gate__brand"><div class="ugl-gate__t1">DISPATCH</div><div class="ugl-gate__t2">TRAINING ACCESS</div></div></div>
-    <p class="ugl-gate__lead">Enter your team password to open the course.</p>
-    <input type="password" id="ugl-pass-input" class="ugl-gate__input" placeholder="Enter password" autocomplete="current-password">
-    <button type="button" class="ugl-gate__btn" onclick="uglCheckPass()">Enter Course</button>
-    <p id="ugl-pass-error" class="ugl-gate__error">Incorrect password</p>
+  <div class="ugl-gate__wrap">
+    <div class="ugl-gate__badge">
+      <span class="ugl-gate__badge-dot"></span>
+      SECURE TERMINAL · AUTH REQUIRED
+    </div>
+    <div class="ugl-gate__panel">
+      <div class="ugl-gate__logo">
+        <div class="ugl-gate__mark">UGL</div>
+        <div>
+          <div class="ugl-gate__t1">DISPATCH</div>
+          <div class="ugl-gate__t2">TRAINING ACCESS</div>
+        </div>
+      </div>
+      <p class="ugl-gate__lead">Enter your team password to open the course. Access is held for this browser tab only.</p>
+      <label class="ugl-gate__label" for="ugl-pass-input">ACCESS CODE</label>
+      <input type="password" id="ugl-pass-input" class="ugl-gate__input" placeholder="••••••••••••" autocomplete="current-password">
+      <p id="ugl-pass-error" class="ugl-gate__error">Incorrect password</p>
+      <button type="button" class="ugl-gate__btn" id="ugl-pass-submit">Enter Course <span class="ugl-gate__btn-arrow">→</span></button>
+    </div>
+    <div class="ugl-gate__foot">UGL DISPATCH TRAINING · INTERNAL USE ONLY</div>
   </div>
 </div>
 
-<style>
-  :root{--ugl-bg:#0F1011;--ugl-panel:#16171A;--ugl-card:#1D1F23;--ugl-red:#B5302B;--ugl-red2:#c93a35;--ugl-white:#F3F4F6;--ugl-gray:#80848C;--ugl-line:rgba(255,255,255,.08)}
-  body.ugl-locked{overflow:hidden}
-  .ugl-gate{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--ugl-bg);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;animation:uglGateIn .45s ease both}
-  .ugl-gate::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(181,48,43,.12),transparent 55%)}
-  .ugl-gate__panel{position:relative;width:min(380px,92vw);padding:34px 30px 28px;border-radius:16px;background:linear-gradient(180deg,var(--ugl-panel),var(--ugl-card));border:1px solid var(--ugl-line);box-shadow:0 24px 64px rgba(0,0,0,.45);text-align:center;animation:uglPanelIn .55s cubic-bezier(.2,.8,.2,1) .08s both}
-  .ugl-gate__logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px}
-  .ugl-gate__mark{width:46px;height:46px;border-radius:10px;background:var(--ugl-red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:1px}
-  .ugl-gate__t1{color:var(--ugl-white);font-weight:800;font-size:17px;letter-spacing:1px;line-height:1;text-align:left}
-  .ugl-gate__t2{color:var(--ugl-gray);font-weight:700;font-size:10px;letter-spacing:2.2px;margin-top:3px;text-align:left}
-  .ugl-gate__lead{color:var(--ugl-gray);font-size:14px;line-height:1.5;margin:0 0 18px}
-  .ugl-gate__input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b0c0d;color:var(--ugl-white);font-size:16px;box-sizing:border-box;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
-  .ugl-gate__input:focus{outline:none;border-color:rgba(181,48,43,.65);box-shadow:0 0 0 3px rgba(181,48,43,.18)}
-  .ugl-gate__btn{width:100%;padding:13px 16px;border:none;border-radius:10px;background:var(--ugl-red);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:transform .15s,background .15s,box-shadow .15s}
-  .ugl-gate__btn:hover{background:var(--ugl-red2);transform:translateY(-1px);box-shadow:0 10px 24px rgba(181,48,43,.28)}
-  .ugl-gate__error{color:#ef4444;font-size:13px;margin:12px 0 0;display:none}
-  @keyframes uglGateIn{from{opacity:0}to{opacity:1}}
-  @keyframes uglPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
-  body.ugl-unlocked .wrap,body.ugl-unlocked .container,body.ugl-unlocked #progress-track,body.ugl-unlocked .themebtn,body.ugl-unlocked .topbar,body.ugl-unlocked .sidebar,body.ugl-unlocked #content{animation:uglContentIn .45s ease both}
-  @keyframes uglContentIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-</style>
-
 <script>
-  document.body.classList.add('ugl-locked');
-  const UGL_PASS = "UGLUPDATE2002";
+(function () {
+  var UGL_PASS = 'UGLUPDATE2002';
+  var gate = document.getElementById('ugl-pass-gate');
+  var input = document.getElementById('ugl-pass-input');
+  var error = document.getElementById('ugl-pass-error');
+  var submitBtn = document.getElementById('ugl-pass-submit');
 
   function uglRefreshAfterUnlock() {
-    setTimeout(function() {
+    setTimeout(function () {
       if (typeof render === 'function') render();
       if (typeof window.uglRoadbookRefresh === 'function') window.uglRoadbookRefresh();
     }, 0);
   }
 
-  function uglFinishUnlock() {
+  function showError(msg) {
+    error.textContent = msg;
+    error.style.display = 'block';
+  }
+
+  function hideError() {
+    error.style.display = 'none';
+  }
+
+  function unlock() {
     document.body.classList.remove('ugl-locked');
     document.body.classList.add('ugl-unlocked');
-    var gate = document.getElementById('ugl-pass-gate');
-    if (gate) {
-      gate.style.transition = 'opacity .35s ease, transform .35s ease';
-      gate.style.opacity = '0';
-      gate.style.transform = 'scale(.98)';
-      setTimeout(function() { gate.remove(); }, 360);
-    }
     sessionStorage.setItem('ugl_unlocked', 'true');
-    uglRefreshAfterUnlock();
+    gate.classList.add('is-leaving');
+    setTimeout(function () {
+      gate.remove();
+      uglRefreshAfterUnlock();
+    }, 340);
   }
 
-  function uglCheckPass() {
-    const input = document.getElementById('ugl-pass-input').value;
-    if (input === UGL_PASS) {
-      uglFinishUnlock();
+  function checkPass() {
+    var value = input.value.trim();
+    if (!value) {
+      showError('Enter your team password to continue.');
+      return;
+    }
+    if (value === UGL_PASS) {
+      hideError();
+      unlock();
     } else {
-      document.getElementById('ugl-pass-error').style.display = 'block';
+      showError('Incorrect password');
     }
   }
 
-  document.getElementById('ugl-pass-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') uglCheckPass();
+  submitBtn.addEventListener('click', checkPass);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') checkPass();
   });
+  input.addEventListener('input', hideError);
 
   if (sessionStorage.getItem('ugl_unlocked') === 'true') {
-    var g = document.getElementById('ugl-pass-gate');
-    if (g) g.remove();
-    document.body.classList.remove('ugl-locked');
+    gate.remove();
     document.body.classList.add('ugl-unlocked');
+  } else {
+    document.body.classList.add('ugl-locked');
   }
+})();
 </script>
-
 <div class="wrap">
   <div class="hdr">
     <div class="hdr-left">
