@@ -39,9 +39,8 @@ body.ugl-locked{overflow:hidden}
 }
 .ugl-gate__logo{display:flex;align-items:center;gap:13px;margin-bottom:24px}
 .ugl-gate__mark{
-  width:48px;height:48px;border-radius:12px;background:var(--ugl-red);display:flex;align-items:center;
-  justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:.01em;
-  box-shadow:0 6px 18px rgba(207,59,48,.4);
+  width:48px;height:48px;object-fit:contain;flex-shrink:0;
+  filter:drop-shadow(0 6px 14px rgba(207,59,48,.35));
 }
 .ugl-gate__t1{font-weight:800;font-size:19px;letter-spacing:.05em;line-height:1;color:var(--ugl-ink)}
 .ugl-gate__t2{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--ugl-dim);margin-top:6px}

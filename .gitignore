@@ -1,0 +1,5 @@
+# Local tooling / editor config
+.claude/
+
+# ElevenLabs voice audition scratch (not part of the site)
+voice-samples/
