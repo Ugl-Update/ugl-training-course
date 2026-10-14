@@ -70,8 +70,11 @@
         }, function () { return []; });
       },
       href: function (it) { return 'module.html?m=' + encodeURIComponent(it.id); },
-      loadAccess: function () {
-        return db.from('user_access').select('mode,items').maybeSingle().then(function (r) { return r.data || null; }, function () { return null; });
+      // Ask for this person's row by id: admins may read everyone's rows, so an unfiltered read
+      // would hand an admin someone else's limit.
+      loadAccess: function (user) {
+        return db.from('user_access').select('mode,items').eq('user_id', user.id).maybeSingle()
+          .then(function (r) { return r.data || null; }, function () { return null; });
       },
       isAdmin: function () {
         return db.rpc('is_admin').then(function (r) { return r.data === true; }, function () { return false; });
@@ -325,7 +328,7 @@
   window.uglOnSignedIn = function (user) {
     // Keep the menu out of sight until we know what this person may open, so nothing flashes up.
     portal.style.visibility = $('tabs').style.visibility = 'hidden';
-    (env.loadAccess ? env.loadAccess() : Promise.resolve(null)).then(function (access) {
+    (env.loadAccess ? env.loadAccess(user) : Promise.resolve(null)).then(function (access) {
       applyAccess(access); build(); setUser(user); refresh(); loadProgress();
       portal.style.visibility = $('tabs').style.visibility = '';
     });
