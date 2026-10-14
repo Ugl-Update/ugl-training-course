@@ -93,7 +93,7 @@ Admins (listed in `public.admins`) see an **ADMIN** button in the top bar. `admi
   - **Tools only** (every tool, including tools added later, and no lessons);
   - **Only what I pick** (tick lessons and tools; a group's top box ticks the whole group).
 
-  The **CAN OPEN** column shows each person's choice. Their **MARKED AS READ** count is out of the lessons they can open. A limit applies at once: the gateway refuses anything outside it, even from an old link. Their menu changes the next time they open or refresh the course. Admins always see everything.
+  The **CAN OPEN** column shows each person's choice. Their **MARKED AS READ** count is out of the lessons they can open. A limit applies at once: the gateway refuses anything outside it, even from an old link. Their menu changes the next time they open or refresh the course, and any copies of lessons saved on their device for fast reopening that are no longer open to them are deleted then. Admins always see everything.
 
 The rules behind it:
 - Course files can only be fetched through the gateway. Signed-in users cannot read the bucket directly, and the open history (`module_opens`) is written by the gateway, not the browser, so it can be neither skipped nor faked. Read marks are the trainee's own choice; the admin page shows any lesson marked as read that was never opened.

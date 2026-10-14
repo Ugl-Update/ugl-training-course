@@ -315,6 +315,24 @@
     });
   }
 
+  // Lessons kept on this device for fast reopening (module.html) that this person may no longer
+  // open are deleted, so a new limit also clears what was saved before it.
+  function pruneCache() {
+    try {
+      if (!window.caches) return;
+      var keep = {};
+      ITEMS.forEach(function (it) { keep[it.path] = 1; keep['audio/' + it.path.replace(/\.html$/, '.pack')] = 1; });
+      caches.open('ugl-content-v1').then(function (c) {
+        return c.keys().then(function (ks) {
+          ks.forEach(function (k) {
+            var m = k.url.match(/\/__ugl-cache\/([^?]*)\?/);
+            if (m && !keep[decodeURIComponent(m[1])]) c.delete(k);
+          });
+        });
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function setUser(user) {
     var email = user && user.email, dom = '@' + ((window.UGL_CONFIG && window.UGL_CONFIG.userDomain) || '');
     var name = email ? (email.slice(-dom.length) === dom ? email.slice(0, -dom.length) : email.split('@')[0]) : '';
@@ -329,7 +347,7 @@
     // Keep the menu out of sight until we know what this person may open, so nothing flashes up.
     portal.style.visibility = $('tabs').style.visibility = 'hidden';
     (env.loadAccess ? env.loadAccess(user) : Promise.resolve(null)).then(function (access) {
-      applyAccess(access); build(); setUser(user); refresh(); loadProgress();
+      applyAccess(access); build(); setUser(user); refresh(); loadProgress(); pruneCache();
       portal.style.visibility = $('tabs').style.visibility = '';
     });
     if (env.isAdmin) env.isAdmin().then(showAdmin);

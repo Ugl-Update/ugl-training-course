@@ -66,7 +66,9 @@
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (j) {
           if (res.ok && j.url) return j;
-          throw new Error(REFUSED[j.reason] || (res.status === 401 ? 'PLEASE SIGN IN AGAIN' : res.status === 403 ? 'ACCESS DENIED' : 'COULD NOT LOAD'));
+          var err = new Error(REFUSED[j.reason] || (res.status === 401 ? 'PLEASE SIGN IN AGAIN' : res.status === 403 ? 'ACCESS DENIED' : 'COULD NOT LOAD'));
+          err.reason = j.reason;
+          throw err;
         });
       });
     }
@@ -112,8 +114,19 @@
     function openCache() {
       try { return window.caches ? caches.open(CACHE).catch(function () { return null; }) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); }
     }
+    // A copy kept on this device must not outlive the person's access to it.
+    function forget(path) {
+      openCache().then(function (c) {
+        if (c) c.keys().then(function (ks) {
+          ks.forEach(function (k) { if (k.url.indexOf('/__ugl-cache/' + encodeURIComponent(path) + '?') > 0) c.delete(k); });
+        });
+      }).catch(function () {});
+    }
     function getFile(path, part, progress) {
-      return gateway({ action: 'open', module: slug, path: path, part: part, signals: sig }).then(function (g) {
+      return gateway({ action: 'open', module: slug, path: path, part: part, signals: sig }).catch(function (err) {
+        if (err.reason === 'no-access' || err.reason === 'blocked-user') forget(path);
+        throw err;
+      }).then(function (g) {
         var key = location.origin + '/__ugl-cache/' + encodeURIComponent(path) + '?v=' + encodeURIComponent(g.etag || '');
         return openCache().then(function (c) {
           return (c && g.etag ? c.match(key) : Promise.resolve(null)).then(function (hit) {

@@ -121,7 +121,9 @@ Deno.serve(async (req) => {
   else if (s.wd === true || s.headless === true) block = "automated-browser";
   else if (AGENT_UA.test(ua) || AGENT_UA.test(String(s.ua || ""))) block = "ai-browser";
   if (!block) {
-    const { data: limit } = await db.from("user_access").select("mode,items").eq("user_id", user.id).maybeSingle();
+    // If the limit cannot be read, refuse rather than treat the person as unlimited.
+    const { data: limit, error: limitErr } = await db.from("user_access").select("mode,items").eq("user_id", user.id).maybeSingle();
+    if (limitErr) return json({ error: "server" }, 500);
     if (limit) block = await accessProblem(limit, String(body.module || ""), path, part);
   }
   if (s) {
