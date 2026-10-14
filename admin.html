@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Never shown inside another site's frame (clickjacking). -->
+  <script>if(window.top!==window.self)document.documentElement.style.display='none'</script>
+  <meta name="robots" content="noindex, nofollow, noarchive, noai, noimageai">
+  <title>Admin · Unified Service and Consulting</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <script>try{if(localStorage.getItem('ugl-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ugl-site.css">
+  <link rel="stylesheet" href="ugl-page.css">
+  <style>
+    .adm-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:38px}
+    .adm-tiles .stat b{font-size:28px}
+    .adm-tiles .stat.is-alert b{color:var(--u-red-ink)}
+    .adm-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 14px}
+    .adm-h h2{font-size:22px;font-weight:700;color:var(--u-text)}
+    .adm-h span{font:500 11px var(--u-mono);letter-spacing:.12em;color:var(--u-faint)}
+    .adm-sec{margin-bottom:44px}
+    .alerts{display:grid;gap:8px}
+    .alert{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;background:var(--u-surface);border:1px solid var(--u-line);border-radius:12px}
+    .alert i{width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--u-amber)}
+    .alert.is-red i{background:var(--u-red)}
+    .alert b{color:var(--u-text);font-weight:700}
+    .alert p{margin:0;font-size:15px;line-height:1.45;color:var(--u-text-2)}
+    .alert small{display:block;margin-top:3px;font-size:13px;color:var(--u-muted)}
+    .alert time{font:500 12px var(--u-mono);color:var(--u-faint);white-space:nowrap}
+    .adm-empty{padding:18px;border:1px dashed var(--u-line-2);border-radius:12px;color:var(--u-text-3);font-size:15px}
+    .adm-more{margin-top:10px}
+    table.adm{width:100%;border-collapse:collapse;font-size:14.5px}
+    .adm th{text-align:left;font:500 10.5px var(--u-mono);letter-spacing:.14em;color:var(--u-muted);padding:12px 14px;border-bottom:1px solid var(--u-line-2);white-space:nowrap}
+    .adm td{padding:12px 14px;border-bottom:1px solid var(--u-line);color:var(--u-text-2);vertical-align:middle}
+    .adm tr.is-open td{border-bottom:none;background:rgba(var(--u-red-rgb),.04)}
+    .adm .who{font-weight:700;color:var(--u-text)}
+    .adm .who small{display:block;font:500 11px var(--u-mono);letter-spacing:.06em;color:var(--u-faint);font-weight:500}
+    .meter{display:flex;align-items:center;gap:10px;min-width:140px}
+    .meter span{font:500 12.5px var(--u-mono);color:var(--u-text-3);white-space:nowrap}
+    .meter i{flex:1;height:5px;border-radius:3px;background:rgba(var(--u-ov-rgb),.1);overflow:hidden}
+    .meter i b{display:block;height:100%;background:var(--u-red)}
+    .pill{display:inline-block;font:600 11px var(--u-mono);letter-spacing:.06em;padding:4px 8px;border-radius:6px;border:1px solid var(--u-line-2);color:var(--u-text-3)}
+    .pill.is-red{color:var(--u-red-ink);border-color:rgba(var(--u-red-rgb),.5);background:rgba(var(--u-red-rgb),.08)}
+    .pill.is-green{color:var(--u-green);border-color:rgba(var(--u-green-rgb),.45)}
+    .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+    .acts .btn{padding:7px 12px;font-size:13px}
+    .detail td{padding:4px 14px 22px;background:rgba(var(--u-red-rgb),.04)}
+    .detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:22px}
+    .detail h3{font-size:15px;font-weight:700;color:var(--u-text);margin:12px 0 8px}
+    .rows{display:grid;gap:0;border:1px solid var(--u-line);border-radius:10px;background:var(--u-surface);overflow:hidden}
+    .rows div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:9px 12px;border-top:1px solid var(--u-line);font-size:14px;color:var(--u-text-2)}
+    .rows div:first-child{border-top:none}
+    .rows small{display:block;font-size:12.5px;color:var(--u-muted)}
+    .rows .r{color:var(--u-red-ink)}
+    .rows time{font:500 11.5px var(--u-mono);color:var(--u-faint);white-space:nowrap}
+    .add-user{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:4px 18px;padding:20px 22px;margin:0}
+    .add-user .field{margin-bottom:12px}
+    .pw-row{display:flex;gap:8px}
+    .pw-row input{flex:1;min-width:0}
+    .pw-row .btn{flex-shrink:0;padding:0 14px;font-size:13.5px}
+    .chk{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--u-text-2);cursor:pointer;margin-bottom:14px}
+    .chk input{width:17px;height:17px;accent-color:var(--u-red)}
+    .add-row{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .add-err{margin:0;font-size:14px;color:var(--u-red-ink)}
+    .cred{margin-top:14px;padding:16px 18px;border:1px solid rgba(var(--u-green-rgb),.45);background:rgba(var(--u-green-rgb),.08);border-radius:12px;font-size:15px;color:var(--u-text-2)}
+    .cred b{color:var(--u-text)}
+    .cred-box{display:flex;align-items:center;gap:10px 22px;flex-wrap:wrap;margin:10px 0 8px}
+    .cred-box code{font:600 15px var(--u-mono);color:var(--u-text);background:var(--u-inset);border:1px solid var(--u-line);border-radius:6px;padding:3px 8px;margin-left:6px}
+    .cred small{display:block;font-size:13px;color:var(--u-muted)}
+    .pill.is-limit{color:var(--u-amber);border-color:var(--u-amber)}
+    .acc h3{margin-top:14px}
+    .acc-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+    .acc-mode{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--u-line-2);border-radius:12px;background:var(--u-surface);cursor:pointer;min-width:0}
+    .acc-mode.is-on{border-color:rgba(var(--u-red-rgb),.55);background:rgba(var(--u-red-rgb),.07)}
+    .acc-mode input,.acc-group input{accent-color:var(--u-red);width:16px;height:16px;margin:2px 0 0;flex-shrink:0}
+    .acc-mode b{display:block;font-size:14.5px;color:var(--u-text)}
+    .acc-mode small{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:var(--u-muted)}
+    .acc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:14px}
+    .acc-group{padding:10px 14px 8px;border:1px solid var(--u-line);border-radius:12px;background:var(--u-surface)}
+    .acc-group label{display:flex;gap:9px;align-items:flex-start;padding:4px 0;font-size:14px;line-height:1.35;color:var(--u-text-2);cursor:pointer}
+    .acc-group label.acc-all{padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--u-line);font:600 10.5px/1.6 var(--u-mono);letter-spacing:.12em;color:var(--u-muted)}
+    .acc-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .acc-msg{margin:0;font-size:14px;color:var(--u-red-ink)}
+    .acc-msg.is-ok{color:var(--u-green)}
+    @media(max-width:860px){.add-user{grid-template-columns:1fr}.acc-modes{grid-template-columns:1fr}}
+    @media(max-width:860px){.adm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="ugl-unlocked">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar__brand">
+        <img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">
+        <div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ ADMIN</span></div>
+      </div>
+      <div class="topbar__right">
+        <button type="button" class="theme-btn"></button>
+        <a class="back" href="index.html">← COURSE</a>
+      </div>
+    </header>
+    <main class="page page--wide">
+      <section class="page-hero">
+        <div class="eyebrow"><i></i>ADMIN · ACTIVITY &amp; SECURITY</div>
+        <h1>Trainee activity</h1>
+        <p class="lead">What each trainee marked as read, what they actually opened and for how long, and anything that looked like copying, scraping or an AI tool. Last 30 days. Use <b>Access</b> on a person's row to limit what they can open.</p>
+        <div class="chips"><button type="button" class="btn btn--ghost" id="refresh">Refresh</button></div>
+      </section>
+      <section class="adm-sec" id="people" hidden>
+        <div class="adm-h"><h2>Add a person</h2><span>USERNAME AND PASSWORD · NO EMAIL NEEDED</span></div>
+        <form class="card add-user" id="add-user" autocomplete="off" novalidate>
+          <div class="field"><label for="nu-name">USERNAME</label><input id="nu-name" type="text" placeholder="e.g. omar" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="32"></div>
+          <div class="field"><label for="nu-pass">PASSWORD</label><div class="pw-row"><input id="nu-pass" type="text" autocomplete="new-password" spellcheck="false" maxlength="72" placeholder="at least 8 characters"><button type="button" class="btn btn--ghost" id="nu-gen">Generate</button></div></div>
+          <label class="chk"><input type="checkbox" id="nu-admin"> Make this person an admin (they can see this page and add people)</label>
+          <div class="add-row"><button class="btn" type="submit" id="nu-go">Add person</button><p class="add-err" id="nu-err" role="alert"></p></div>
+        </form>
+        <div id="notice"></div>
+      </section>
+      <div id="out"><p class="note">Loading…</p></div>
+    </main>
+  </div>
+  <script src="vendor/supabase.min.js"></script>
+  <script src="ugl-config.js"></script>
+  <script src="ugl-catalog.js"></script>
+  <script src="ugl-auth.js"></script>
+  <script src="ugl-theme.js"></script>
+  <script>
+  (function () {
+    var db = window.uglDb, cat = window.UGL_CATALOG, dom = '@' + window.UGL_CONFIG.userDomain;
+    var out = document.getElementById('out');
+    var ITEM = {}; cat.items.forEach(function (i) { ITEM[i.id] = i; });
+    var COURSE = cat.items.filter(function (i) { return i.section === 'course' && !i.hidden && !i.soon; });
+    // What an admin can open or close for one person (user_access): everything in the menu except hidden items.
+    var PICK = cat.items.filter(function (i) { return !i.hidden && !i.soon; });
+    var DAY = 864e5, me = null, data = null, openUser = null, accessUser = null, accessNote = null, showAll = false;
+    window.uglTheme.wire(document);
+
+    var REASON = {
+      'automated-browser': 'Blocked: automated browser (robot-controlled or headless)',
+      'ai-browser': 'Blocked: AI browser',
+      'bot-or-script': 'Blocked: bot or script',
+      'not-a-browser': 'Blocked: request did not come from a course page',
+      'not-the-course-site': 'Blocked: request from another website or tool',
+      'blocked-user': 'Blocked: access is paused',
+      'too-many-requests': 'Blocked: too many requests',
+      'bulk-download': 'Blocked: opened too many lessons too fast',
+      'not-found': 'Asked for a file that does not exist'
+    };
+    var FLAG = {
+      'bulk': 'Opened many lessons within a few minutes',
+      'user-agent-mismatch': 'Browser identity did not match (possible disguise)',
+      'headless-hints': 'Browser looks headless (no languages set)'
+    };
+
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function uname(email) { email = email || ''; return email.slice(-dom.length) === dom ? email.slice(0, -dom.length) : email; }
+    function title(id) { return ITEM[id] ? ITEM[id].title : (id || 'unknown page'); }
+    function when(t) { return new Date(t).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+    // Page reports come from the trainee's browser, so treat their numbers as untrusted.
+    function num(v) { v = Number(v); return isFinite(v) && v > 0 ? v : 0; }
+    function dur(s) { s = Math.round(s || 0); if (s < 60) return s + 's'; var m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+    function device(ua) {
+      ua = ua || '';
+      var b = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /Firefox\//.test(ua) ? 'Firefox' :
+        /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : ua ? ua.split(/[\s/]/)[0] : 'Unknown';
+      var o = /Windows/.test(ua) ? 'Windows' : /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'Mac' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : '';
+      return b + (o ? ' on ' + o : '');
+    }
+
+    // Everything worth a look, newest first: refused requests, flags and page reports.
+    function alertsOf(d) {
+      var list = [], seen = {};
+      d.opens.forEach(function (o) { seen[o.user_id + '|' + o.module] = true; });
+      d.marks.forEach(function (m) {
+        if (!seen[m.user_id + '|' + m.module]) list.push({ at: m.done_at, user: m.user_id, red: false, text: 'Marked as read without opening it', where: m.module, ua: '', ip: '' });
+      });
+      d.access.forEach(function (a) {
+        if (a.part !== 'main' && a.allowed) return;
+        if (!a.allowed) list.push({ at: a.at, user: a.user_id, red: a.reason !== 'not-found', text: REASON[a.reason] || 'Blocked: ' + a.reason, where: a.module, ua: a.ua, ip: a.ip });
+        (a.flags || []).forEach(function (f) { list.push({ at: a.at, user: a.user_id, red: false, text: FLAG[f] || f, where: a.module, ua: a.ua, ip: a.ip }); });
+      });
+      // Failed sign-ins: one alert per account (or unknown username) and address, with a count.
+      var fails = {};
+      d.events.forEach(function (e) {
+        if (e.kind !== 'login-failed') return;
+        var x = e.detail || {}, k = (x.login || '') + '|' + (e.ip || ''), f = fails[k];
+        if (!f) f = fails[k] = { at: e.at, user: e.user_id, login: String(x.login || ''), n: 0, ua: e.ua, ip: e.ip };
+        f.n++; if (e.at > f.at) { f.at = e.at; f.ua = e.ua; }
+      });
+      Object.keys(fails).forEach(function (k) {
+        var f = fails[k], times = f.n > 1 ? f.n + ' times' : 'once';
+        list.push({ at: f.at, user: f.user, red: f.n >= 3, signin: true,
+          text: f.user ? 'Someone tried to sign in to this account with a wrong password (' + times + ')' : 'Someone tried to sign in as unknown user “' + uname(f.login) + '” (' + times + ')',
+          where: '', ua: f.ua, ip: f.ip });
+      });
+      d.events.forEach(function (e) {
+        var x = e.detail || {}, t = null, red = false;
+        if (e.kind === 'copy') t = 'Tried to copy ' + num(x.chars) + ' characters' + (x.sample ? ': “' + String(x.sample).slice(0, 80) + (num(x.chars) > 80 ? '…' : '') + '”' : '');
+        else if (e.kind === 'print') t = 'Tried to print';
+        else if (e.kind === 'save') t = x.key === 'u' ? 'Tried to view the page source' : 'Tried to save the page';
+        else if (e.kind === 'view' && x.noInput === true) { t = 'Page open ' + dur(num(x.secs)) + ' with no mouse, keyboard, touch or scrolling (possible AI agent)'; red = true; }
+        if (t) list.push({ at: e.at, user: e.user_id, red: red, text: t, where: e.module, ua: e.ua, ip: e.ip });
+      });
+      return list.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    }
+
+    function load() {
+      var since = new Date(Date.now() - 30 * DAY).toISOString();
+      return Promise.all([
+        db.rpc('admin_users'),
+        db.from('module_opens').select('user_id,module,opened_at').order('opened_at', { ascending: false }).limit(10000),
+        db.from('access_log').select('at,user_id,module,part,allowed,reason,flags,ip,ua').gte('at', since).order('at', { ascending: false }).limit(5000),
+        db.from('security_events').select('at,user_id,kind,module,detail,ip,ua').gte('at', since).order('at', { ascending: false }).limit(5000),
+        db.from('lesson_done').select('user_id,module,done_at').limit(10000),
+        db.from('user_access').select('user_id,mode,items').limit(1000)
+      ]).then(function (r) {
+        var bad = r.filter(function (x) { return x.error; })[0];
+        if (bad) throw new Error(bad.error.message);
+        var limits = {}; r[5].data.forEach(function (x) { limits[x.user_id] = x; });
+        return { users: r[0].data, opens: r[1].data, access: r[2].data, events: r[3].data, marks: r[4].data, limits: limits };
+      });
+    }
+
+    // ---- access limits: null = everything, { mode: 'tools' } or { mode: 'custom', items: [ids] }.
+    // The content gateway enforces them; the course menu only shows what is open.
+    function allows(lim, it) { return !lim || (lim.mode === 'tools' ? it.section === 'tools' : (lim.items || []).indexOf(it.id) >= 0); }
+    function accessPill(lim) {
+      if (!lim) return '<span class="pill">EVERYTHING</span>';
+      if (lim.mode === 'tools') return '<span class="pill is-limit">TOOLS ONLY</span>';
+      var names = PICK.filter(function (i) { return allows(lim, i); }).map(function (i) { return i.title; });
+      return '<span class="pill is-limit" title="' + esc(names.join(', ')) + '">' + names.length + (names.length === 1 ? ' ITEM' : ' ITEMS') + '</span>';
+    }
+    function accessEditor(u, lim) {
+      var mode = !lim ? 'all' : lim.mode, name = esc(uname(u.email));
+      var modes = [
+        ['all', 'Everything', 'All lessons and tools, including anything added later.'],
+        ['tools', 'Tools only', 'Every tool, including new ones. No lessons.'],
+        ['custom', 'Only what I pick', 'Just the lessons and tools ticked below.']
+      ].map(function (m) {
+        return '<label class="acc-mode' + (m[0] === mode ? ' is-on' : '') + '"><input type="radio" name="acc-mode" value="' + m[0] + '"' + (m[0] === mode ? ' checked' : '') + '>' +
+          '<span><b>' + m[1] + '</b><small>' + m[2] + '</small></span></label>';
+      }).join('');
+      var groups = cat.tracks.map(function (t) { return { k: 'COURSE · ' + t.title, items: PICK.filter(function (i) { return i.section === 'course' && i.track === t.id; }) }; })
+        .concat(cat.toolGroups.map(function (g) { return { k: 'TOOLS · ' + g.title, items: PICK.filter(function (i) { return i.section === 'tools' && i.group === g.id; }) }; }))
+        .concat([{ k: 'SIMULATOR', items: PICK.filter(function (i) { return i.section === 'simulator'; }) }]);
+      var picked = mode === 'custom' ? lim.items || [] : [];
+      var pick = groups.filter(function (g) { return g.items.length; }).map(function (g) {
+        var on = g.items.filter(function (i) { return picked.indexOf(i.id) >= 0; }).length;
+        return '<div class="acc-group"><label class="acc-all"><input type="checkbox" data-acc-all' + (on === g.items.length ? ' checked' : '') + (on && on < g.items.length ? ' data-mixed' : '') + '>' + esc(g.k.toUpperCase()) + '</label>' +
+          g.items.map(function (i) {
+            return '<label><input type="checkbox" name="acc-item" value="' + esc(i.id) + '"' + (picked.indexOf(i.id) >= 0 ? ' checked' : '') + '>' + esc(i.title) + '</label>';
+          }).join('') + '</div>';
+      }).join('');
+      return '<form class="acc" data-acc-form="' + u.id + '"><h3>What can ' + name + ' open?</h3><div class="acc-modes">' + modes + '</div>' +
+        '<div class="acc-pick"' + (mode === 'custom' ? '' : ' hidden') + '>' + pick + '</div>' +
+        '<div class="acc-row"><button class="btn" type="submit">Save access</button><button type="button" class="btn btn--ghost" data-acc-close>Close</button>' +
+        '<p class="acc-msg' + (accessNote && accessNote.ok ? ' is-ok' : '') + '" role="alert">' + esc(accessNote ? accessNote.text : '') + '</p></div></form>';
+    }
+
+    function render() {
+      var d = data, week = Date.now() - 7 * DAY, alerts = alertsOf(d), by = {};
+      d.users.forEach(function (u) { by[u.id] = { u: u, mods: {}, marks: {}, last: null, secs7: 0, alerts7: 0 }; });
+      d.marks.forEach(function (m) { var s = by[m.user_id]; if (s) s.marks[m.module] = m.done_at; });
+      d.opens.forEach(function (o) {
+        var s = by[o.user_id]; if (!s) return;
+        var m = s.mods[o.module] || (s.mods[o.module] = { n: 0, first: o.opened_at, last: o.opened_at, secs: 0 });
+        m.n++; if (o.opened_at < m.first) m.first = o.opened_at; if (o.opened_at > m.last) m.last = o.opened_at;
+        if (!s.last || o.opened_at > s.last) s.last = o.opened_at;
+      });
+      d.events.forEach(function (e) {
+        var s = by[e.user_id]; if (!s || e.kind !== 'view' || !e.detail) return;
+        var m = s.mods[e.module]; if (m) m.secs += num(e.detail.secs);
+        if (new Date(e.at) > week) s.secs7 += num(e.detail.secs);
+      });
+      // Failed sign-ins count against nobody: the person whose account was tried did nothing wrong.
+      alerts.forEach(function (a) { var s = by[a.user]; if (s && !a.signin && new Date(a.at) > week) s.alerts7++; });
+      var opens7 = d.opens.filter(function (o) { return new Date(o.opened_at) > week; }).length;
+      var secs7 = Object.keys(by).reduce(function (t, k) { return t + by[k].secs7; }, 0);
+      var alerts7 = alerts.filter(function (a) { return new Date(a.at) > week; }).length;
+      var trainees = d.users.filter(function (u) { return !u.is_admin; }).length;
+
+      var h = '<div class="adm-tiles">' +
+        '<div class="stat"><small>TRAINEES</small><b>' + trainees + '</b><span>' + d.users.length + ' accounts in total</span></div>' +
+        '<div class="stat"><small>LESSONS OPENED</small><b>' + opens7 + '</b><span>last 7 days</span></div>' +
+        '<div class="stat"><small>TIME IN LESSONS</small><b>' + dur(secs7) + '</b><span>last 7 days, everyone</span></div>' +
+        '<div class="stat' + (alerts7 ? ' is-alert' : '') + '"><small>ALERTS</small><b>' + alerts7 + '</b><span>last 7 days</span></div></div>';
+
+      h += '<section class="adm-sec"><div class="adm-h"><h2>Alerts</h2><span>FAILED SIGN-INS, BLOCKED REQUESTS, COPY ATTEMPTS</span></div>';
+      if (!alerts.length) h += '<div class="adm-empty">Nothing suspicious in the last 30 days.</div>';
+      else {
+        h += '<div class="alerts">' + alerts.slice(0, showAll ? alerts.length : 12).map(function (a) {
+          var s = by[a.user];
+          var who = a.signin && !s ? 'Sign-in' : s ? uname(s.u.email) : 'unknown user';
+          return '<div class="alert' + (a.red ? ' is-red' : '') + '"><i></i><p><b>' + esc(who) + '</b> · ' + esc(a.text) +
+            '<small>' + [a.where ? title(a.where) : '', a.ua ? device(a.ua) : '', a.ip || ''].filter(Boolean).map(esc).join(' · ') + '</small></p><time>' + when(a.at) + '</time></div>';
+        }).join('') + '</div>';
+        if (alerts.length > 12) h += '<div class="adm-more"><button type="button" class="btn btn--ghost" id="more">' + (showAll ? 'Show fewer' : 'Show all ' + alerts.length) + '</button></div>';
+      }
+      h += '</section>';
+
+      h += '<section class="adm-sec"><div class="adm-h"><h2>Trainees</h2><span>' + COURSE.length + ' COURSE LESSONS</span></div><div class="tbl-wrap"><table class="adm"><thead><tr>' +
+        '<th>USER</th><th>CAN OPEN</th><th>MARKED AS READ</th><th>LAST OPENED</th><th>TIME (7 DAYS)</th><th>ALERTS (7 DAYS)</th><th></th></tr></thead><tbody>';
+      d.users.slice().sort(function (a, b) { return (by[b.id].last || '') > (by[a.id].last || '') ? 1 : -1; }).forEach(function (u) {
+        var s = by[u.id], lim = d.limits[u.id] || null, open = openUser === u.id, editing = accessUser === u.id;
+        // Progress counts only the lessons this person is allowed to open.
+        var course = COURSE.filter(function (i) { return allows(lim, i); }), done = course.filter(function (i) { return s.marks[i.id]; }).length;
+        h += '<tr' + (open || editing ? ' class="is-open"' : '') + '><td class="who">' + esc(uname(u.email)) + '<small>' + (u.is_admin ? 'ADMIN' : 'TRAINEE') +
+          (u.last_sign_in_at ? ' · SIGNED IN ' + esc(when(u.last_sign_in_at).toUpperCase()) : ' · NEVER SIGNED IN') + '</small></td>' +
+          '<td>' + accessPill(lim) + '</td>' +
+          '<td>' + (course.length ? '<div class="meter"><i><b style="width:' + Math.round(done / course.length * 100) + '%"></b></i><span>' + done + ' / ' + course.length + '</span></div>' : '<span class="pill">NO LESSONS</span>') + '</td>' +
+          '<td>' + (s.last ? esc(when(s.last)) : '<span class="pill">NOTHING YET</span>') + '</td><td>' + dur(s.secs7) + '</td>' +
+          '<td>' + (s.alerts7 ? '<span class="pill is-red">' + s.alerts7 + '</span>' : '<span class="pill is-green">NONE</span>') + '</td>' +
+          '<td><div class="acts"><button type="button" class="btn btn--ghost" data-detail="' + u.id + '">' + (open ? 'Hide' : 'Details') + '</button>' +
+          (u.is_admin ? '' : '<button type="button" class="btn btn--ghost" data-access="' + u.id + '">' + (editing ? 'Close access' : 'Access') + '</button>') +
+          '<button type="button" class="btn btn--ghost" data-pw="' + u.id + '">Reset password</button>' +
+          (u.is_admin ? '' : u.blocked ? '<button type="button" class="btn" data-unblock="' + u.id + '">Unblock</button>' : '<button type="button" class="btn btn--ghost" data-block="' + u.id + '">Block</button>') +
+          '</div></td></tr>';
+        if (editing) h += '<tr class="detail"><td colspan="7">' + accessEditor(u, lim) + '</td></tr>';
+        if (open) h += '<tr class="detail"><td colspan="7">' + detail(s, alerts) + '</td></tr>';
+      });
+      h += '</tbody></table></div></section>';
+      out.innerHTML = h;
+      out.querySelectorAll('[data-mixed]').forEach(function (x) { x.indeterminate = true; });
+    }
+
+    function detail(s, alerts) {
+      // Every lesson they opened or marked, with whether it is marked as read.
+      var ids = Object.keys(s.mods).concat(Object.keys(s.marks).filter(function (k) { return !s.mods[k]; }));
+      var mods = ids.map(function (k) { return { id: k, m: s.mods[k], mark: s.marks[k] }; })
+        .sort(function (a, b) { var x = a.m ? a.m.last : a.mark, y = b.m ? b.m.last : b.mark; return x < y ? 1 : -1; });
+      var lessons = mods.length ? mods.map(function (x) {
+        var mark = x.mark ? '<b class="ok">✓ Marked read ' + esc(when(x.mark)) + '</b>' : ITEM[x.id] && ITEM[x.id].section === 'course' ? 'Not marked as read' : 'Tool';
+        var opened = x.m ? 'Opened ' + x.m.n + (x.m.n > 1 ? ' times' : ' time') + ' · ' + dur(x.m.secs) + ' reading' : '<span class="r">Never opened</span>';
+        return '<div><span>' + esc(title(x.id)) + '<small>' + mark + ' · ' + opened + '</small></span><time>' + (x.m ? esc(when(x.m.last)) : '') + '</time></div>';
+      }).join('') : '<div><span>No lessons opened or marked yet.</span></div>';
+      var acts = [];
+      data.access.forEach(function (a) {
+        if (a.user_id !== s.u.id || a.part !== 'main') return;
+        acts.push({ at: a.at, red: !a.allowed, text: a.allowed ? 'Opened ' + title(a.module) : (REASON[a.reason] || a.reason) + ' · ' + title(a.module), ua: a.ua, ip: a.ip });
+      });
+      data.events.forEach(function (e) {
+        if (e.user_id !== s.u.id || e.kind !== 'view') return;
+        var x = e.detail || {};
+        acts.push({ at: e.at, red: x.noInput === true, text: 'Read ' + title(e.module) + ' for ' + dur(num(x.secs)) + (x.noInput === true ? ' with no input' : ''), ua: e.ua, ip: e.ip });
+      });
+      alerts.forEach(function (a) { if (a.user === s.u.id && !/^Blocked|^Asked|^Marked/.test(a.text)) acts.push({ at: a.at, red: a.red, text: a.text, ua: a.ua, ip: a.ip }); });
+      Object.keys(s.marks).forEach(function (k) { acts.push({ at: s.marks[k], red: false, text: 'Marked ' + title(k) + ' as read', ua: '', ip: '' }); });
+      acts.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+      var activity = acts.length ? acts.slice(0, 60).map(function (a) {
+        return '<div><span' + (a.red ? ' class="r"' : '') + '>' + esc(a.text) + '<small>' + [a.ua ? device(a.ua) : '', a.ip || ''].filter(Boolean).map(esc).join(' · ') + '</small></span><time>' + esc(when(a.at)) + '</time></div>';
+      }).join('') : '<div><span>No activity in the last 30 days.</span></div>';
+      return '<div class="detail-grid"><div><h3>Lessons</h3><div class="rows">' + lessons + '</div></div><div><h3>Recent activity</h3><div class="rows">' + activity + '</div></div></div>';
+    }
+
+    function refresh() {
+      return load().then(function (d) { data = d; render(); }, function (e) {
+        out.innerHTML = '<div class="adm-empty">Could not load activity: ' + esc(e.message) + '</div>';
+      });
+    }
+
+    // ---- accounts: add a person, reset a password (admin-users Edge Function; it checks the caller is an admin)
+    var ALPHA = 'abcdefghjkmnpqrstuvwxyz23456789';
+    function newPassword() {
+      var a = new Uint32Array(10), s = '';
+      crypto.getRandomValues(a);
+      for (var i = 0; i < 10; i++) s += (i === 5 ? '-' : '') + ALPHA[a[i] % ALPHA.length];
+      return s;
+    }
+    function accounts(body) {
+      return db.auth.getSession().then(function (r) {
+        var t = r.data && r.data.session && r.data.session.access_token;
+        return fetch(window.UGL_CONFIG.url + '/functions/v1/admin-users', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + t, apikey: window.UGL_CONFIG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (j) { if (!res.ok) throw new Error(j.error || 'Something went wrong. Try again.'); return j; });
+      });
+    }
+    function showCredentials(title, name, pw) {
+      var site = location.href.replace(/admin\.html.*$/, '');
+      var text = 'Username: ' + name + '\nPassword: ' + pw + '\nSite: ' + site;
+      document.getElementById('notice').innerHTML = '<div class="cred"><b>' + esc(title) + '</b> Give these to them:' +
+        '<div class="cred-box"><span>Username<code>' + esc(name) + '</code></span><span>Password<code>' + esc(pw) + '</code></span>' +
+        '<button type="button" class="btn btn--ghost" id="copy-cred">Copy</button></div>' +
+        '<small>The password is only shown now. If it gets lost, use Reset password.</small></div>';
+      document.getElementById('copy-cred').onclick = function () {
+        var b = this;
+        (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { b.textContent = 'Copied'; }, function () { prompt('Copy this:', text.replace(/\n/g, '  ')); });
+      };
+      document.getElementById('notice').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    var form = document.getElementById('add-user'), nuName = document.getElementById('nu-name'), nuPass = document.getElementById('nu-pass');
+    var nuErr = document.getElementById('nu-err'), nuGo = document.getElementById('nu-go');
+    document.getElementById('nu-gen').addEventListener('click', function () { nuPass.value = newPassword(); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = nuName.value.trim().toLowerCase(), pw = nuPass.value;
+      nuErr.textContent = '';
+      if (!/^[a-z0-9][a-z0-9._-]{1,31}$/.test(name)) { nuErr.textContent = 'Usernames are 2 to 32 characters: letters, numbers, dots, dashes or underscores.'; nuName.focus(); return; }
+      if (pw.length < 8) { nuErr.textContent = 'Use a password of at least 8 characters, or press Generate.'; nuPass.focus(); return; }
+      var admin = document.getElementById('nu-admin').checked;
+      nuGo.disabled = true; nuGo.textContent = 'Adding…';
+      accounts({ action: 'create', username: name, password: pw, admin: admin }).then(function () {
+        form.reset();
+        showCredentials((admin ? 'Admin account' : 'Account') + ' created for ' + name + '.', name, pw);
+        return refresh();
+      }, function (err) { nuErr.textContent = err.message; }).then(function () { nuGo.disabled = false; nuGo.textContent = 'Add person'; });
+    });
+
+    out.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.id === 'more') { showAll = !showAll; render(); return; }
+      var pwId = b.getAttribute('data-pw');
+      if (pwId) {
+        var who = uname(data.users.filter(function (x) { return x.id === pwId; })[0].email);
+        var pw = prompt('New password for ' + who + ' (at least 8 characters). Keep this one or type your own:', newPassword());
+        if (pw === null) return;
+        if (pw.length < 8) { alert('Use at least 8 characters.'); return; }
+        b.disabled = true;
+        accounts({ action: 'password', user_id: pwId, password: pw }).then(function () { showCredentials('Password changed for ' + who + '.', who, pw); },
+          function (err) { alert(err.message); }).then(function () { b.disabled = false; });
+        return;
+      }
+      var id = b.getAttribute('data-detail');
+      if (id) { openUser = openUser === id ? null : id; render(); return; }
+      id = b.getAttribute('data-access');
+      if (id || b.hasAttribute('data-acc-close')) { accessUser = id && accessUser !== id ? id : null; accessNote = null; render(); return; }
+      id = b.getAttribute('data-block');
+      if (id) {
+        var u = data.users.filter(function (x) { return x.id === id; })[0];
+        var why = prompt('Block ' + uname(u.email) + '? They will not be able to open any lesson until you unblock them.\n\nReason (optional):', '');
+        if (why === null) return;
+        b.disabled = true;
+        db.from('blocked_users').insert({ user_id: id, reason: why || null }).then(function (r) { if (r.error) alert(r.error.message); return refresh(); });
+        return;
+      }
+      id = b.getAttribute('data-unblock');
+      if (id) {
+        b.disabled = true;
+        db.from('blocked_users').delete().eq('user_id', id).then(function (r) { if (r.error) alert(r.error.message); return refresh(); });
+      }
+    });
+    // Access editor: the three choices, and the tick boxes (a group's top box ticks the whole group).
+    out.addEventListener('change', function (e) {
+      var f = e.target.closest('form.acc'); if (!f) return;
+      var t = e.target;
+      if (t.name === 'acc-mode') {
+        f.querySelectorAll('.acc-mode').forEach(function (l) { l.classList.toggle('is-on', l.querySelector('input').checked); });
+        f.querySelector('.acc-pick').hidden = t.value !== 'custom';
+      } else if (t.hasAttribute('data-acc-all')) {
+        t.closest('.acc-group').querySelectorAll('[name="acc-item"]').forEach(function (x) { x.checked = t.checked; });
+      } else if (t.name === 'acc-item') {
+        var g = t.closest('.acc-group'), all = g.querySelectorAll('[name="acc-item"]'), on = g.querySelectorAll('[name="acc-item"]:checked').length;
+        var top = g.querySelector('[data-acc-all]'); top.checked = on === all.length; top.indeterminate = on > 0 && on < all.length;
+      }
+      f.querySelector('.acc-msg').textContent = '';
+    });
+    out.addEventListener('submit', function (e) {
+      var f = e.target.closest('form.acc'); if (!f) return;
+      e.preventDefault();
+      var id = f.getAttribute('data-acc-form'), msg = f.querySelector('.acc-msg'), btn = f.querySelector('[type="submit"]');
+      var mode = (f.querySelector('[name="acc-mode"]:checked') || {}).value || 'all';
+      var items = Array.prototype.map.call(f.querySelectorAll('[name="acc-item"]:checked'), function (x) { return x.value; });
+      msg.className = 'acc-msg';
+      if (mode === 'custom' && !items.length) { msg.textContent = 'Tick at least one lesson or tool. To stop all access, use Block instead.'; return; }
+      var q = mode === 'all' ? db.from('user_access').delete().eq('user_id', id)
+        : db.from('user_access').upsert({ user_id: id, mode: mode, items: mode === 'custom' ? items : [] }, { onConflict: 'user_id' });
+      btn.disabled = true;
+      q.then(function (r) {
+        if (r.error) throw new Error(r.error.message);
+        var who = uname(data.users.filter(function (x) { return x.id === id; })[0].email);
+        accessNote = { ok: true, text: 'Saved. This applies to ' + who + ' right away; their menu changes the next time they open or refresh the course.' };
+        return refresh();
+      }).catch(function (err) { btn.disabled = false; msg.textContent = 'Could not save: ' + err.message; });
+    });
+    document.getElementById('refresh').addEventListener('click', refresh);
+
+    db.auth.getSession().then(function (r) {
+      var session = r.data && r.data.session;
+      if (!session) { location.replace('index.html'); return; }
+      me = session.user;
+      return db.rpc('is_admin').then(function (a) {
+        if (a.data !== true) { out.innerHTML = '<div class="adm-empty">This page is for admins.</div>'; return; }
+        document.getElementById('people').hidden = false;
+        return refresh();
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Service and Consulting Training Course</title>
+  <!-- Never shown inside another site's frame (clickjacking). -->
+  <script>if(window.top!==window.self)document.documentElement.style.display='none'</script>
+  <meta name="robots" content="noindex, nofollow, noarchive, noai, noimageai">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <script>try{if(localStorage.getItem('ugl-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ugl-gate.css">
+  <link rel="stylesheet" href="ugl-site.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="ugl-pass-gate" class="ugl-gate">
+      <button type="button" class="theme-btn ugl-gate__theme"></button>
+      <div class="ugl-gate__wrap">
+        <div class="ugl-gate__badge">
+          <span class="ugl-gate__badge-dot"></span>
+          UNIFIED SERVICE AND CONSULTING
+        </div>
+        <div class="ugl-gate__panel">
+          <div class="ugl-gate__logo">
+            <img class="ugl-gate__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">
+            <div>
+              <div class="ugl-gate__t1">DISPATCH</div>
+              <div class="ugl-gate__t2">TRAINING COURSE</div>
+            </div>
+          </div>
+
+          <form id="ugl-login-form" novalidate>
+            <p class="ugl-gate__lead">Sign in with your personal account to open the course.</p>
+            <label class="ugl-gate__label" for="ugl-email">USERNAME</label>
+            <input type="text" id="ugl-email" class="ugl-gate__input ugl-gate__input--text" placeholder="your username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+            <label class="ugl-gate__label ugl-gate__label--gap" for="ugl-pass-input">PASSWORD</label>
+            <input type="password" id="ugl-pass-input" class="ugl-gate__input" placeholder="••••••••••••" autocomplete="current-password" required>
+            <p id="ugl-pass-error" class="ugl-gate__error" role="alert"></p>
+            <button type="submit" class="ugl-gate__btn" id="ugl-pass-submit">Sign In <span class="ugl-gate__btn-arrow">→</span></button>
+            <p class="ugl-gate__hint">Forgot your password? Ask your admin to reset it.</p>
+          </form>
+
+          <form id="ugl-setpw-form" novalidate hidden>
+            <p class="ugl-gate__lead" id="ugl-setpw-lead">Choose a password for your account.</p>
+            <label class="ugl-gate__label" for="ugl-new-pass">NEW PASSWORD</label>
+            <input type="password" id="ugl-new-pass" class="ugl-gate__input" placeholder="At least 8 characters" autocomplete="new-password" required>
+            <label class="ugl-gate__label ugl-gate__label--gap" for="ugl-new-pass2">CONFIRM PASSWORD</label>
+            <input type="password" id="ugl-new-pass2" class="ugl-gate__input" placeholder="Repeat password" autocomplete="new-password" required>
+            <p id="ugl-setpw-error" class="ugl-gate__error" role="alert"></p>
+            <button type="submit" class="ugl-gate__btn" id="ugl-setpw-submit">Save Password <span class="ugl-gate__btn-arrow">→</span></button>
+          </form>
+        </div>
+        <div class="ugl-gate__foot">DISPATCH TRAINING · INTERNAL USE ONLY</div>
+      </div>
+    </div>
+
+    <div id="ugl-course" class="course">
+      <header class="topbar">
+        <div class="topbar__brand">
+          <img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">
+          <div>
+            <span class="topbar__title">DISPATCH</span>
+            <span class="topbar__sub">/ TRAINING COURSE</span>
+          </div>
+        </div>
+        <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+        <div class="topbar__right">
+          <span class="topbar__tag" id="ugl-user-email">INTERNAL MODULES</span>
+          <a class="admin-link" id="ugl-admin" href="admin.html" hidden>ADMIN</a>
+          <button type="button" class="theme-btn"></button>
+          <button type="button" class="lock-btn" id="ugl-lock-btn">⟲ SIGN OUT</button>
+        </div>
+      </header>
+
+      <main class="main" id="portal"></main>
+    </div>
+  </div>
+
+  <script src="vendor/supabase.min.js"></script>
+  <script src="ugl-config.js"></script>
+  <script src="ugl-catalog.js"></script>
+  <script src="ugl-auth.js"></script>
+  <script src="ugl-theme.js"></script>
+  <script src="ugl-portal.js"></script>
+  <script src="ugl-login.js"></script>
+</body>
+</html>

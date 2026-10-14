@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Never shown inside another site's frame (clickjacking). -->
+  <script>if(window.top!==window.self)document.documentElement.style.display='none'</script>
+  <meta name="robots" content="noindex, nofollow, noarchive, noai, noimageai">
+  <title>Loading… · Unified Service and Consulting</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fjojwlygbbajfqhdusut.supabase.co" crossorigin>
+  <script>try{if(localStorage.getItem('ugl-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
+  <style>
+    html,body{margin:0;height:100%;background:#141415;color:#f2f2f3;font-family:system-ui,sans-serif}
+    html[data-theme="light"],html[data-theme="light"] body{background:#EFE7D7;color:#2B2620}
+    .box{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+    .msg{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.18em;opacity:.7;max-width:520px;line-height:1.6}
+    .bar{width:min(320px,80vw);height:3px;background:rgba(128,128,128,.25);border-radius:2px;overflow:hidden}
+    .bar i{display:block;height:100%;width:0;background:#b8211b;transition:width .15s}
+    a{color:#c2412f;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="box" id="box">
+    <div class="msg" id="msg">LOADING…</div>
+    <div class="bar"><i id="fill"></i></div>
+  </div>
+  <script src="vendor/supabase.min.js"></script>
+  <script src="ugl-config.js"></script>
+  <script src="ugl-catalog.js"></script>
+  <script src="ugl-auth.js"></script>
+  <script src="ugl-theme.js"></script>
+  <script src="ugl-guard.js"></script>
+  <script>
+  (function () {
+    var cfg = window.UGL_CONFIG, db = window.uglDb, guard = window.uglGuard;
+    var FN = cfg.url + '/functions/v1/content', CACHE = 'ugl-content-v1';
+    var slug = new URLSearchParams(location.search).get('m');
+    var item = window.UGL_CATALOG.items.filter(function (i) { return i.id === slug && !i.hidden && /\.(html|pdf)$/.test(i.path || ''); })[0];
+    var file = item ? item.path : null;
+    var SECTION = { course: 'COURSE', tools: 'TOOLS', simulator: 'SIMULATOR' };
+    var REFUSED = {
+      'automated-browser': 'AUTOMATED BROWSERS CANNOT OPEN COURSE MATERIAL',
+      'ai-browser': 'AI BROWSERS CANNOT OPEN COURSE MATERIAL. USE CHROME, EDGE, SAFARI OR FIREFOX.',
+      'bot-or-script': 'THIS BROWSER CANNOT OPEN COURSE MATERIAL',
+      'blocked-user': 'YOUR ACCESS IS PAUSED. CONTACT YOUR TRAINER.',
+      'no-access': 'THIS IS NOT OPEN TO YOU. ASK YOUR TRAINER IF YOU NEED IT.',
+      'too-many-requests': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
+      'bulk-download': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
+      'not-found': 'NOT FOUND'
+    };
+    var token = null, name = 'trainee', sig = null;
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    function fail(msg) {
+      document.getElementById('box').innerHTML =
+        '<div class="msg">' + esc(msg) + '</div><a href="index.html">Back to course menu</a>';
+    }
+
+    // ---- Content gateway: checks, logs and hands out a 60-second link for one file.
+    function gateway(body) {
+      return fetch(FN, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, apikey: cfg.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (j) {
+          if (res.ok && j.url) return j;
+          throw new Error(REFUSED[j.reason] || (res.status === 401 ? 'PLEASE SIGN IN AGAIN' : res.status === 403 ? 'ACCESS DENIED' : 'COULD NOT LOAD'));
+        });
+      });
+    }
+    // Page reports. While leaving a page only a beacon is reliable, and a beacon cannot carry
+    // headers, so it sends the sign-in token in its (plain text) body instead.
+    function report(kind, detail, leaving) {
+      if (!token) return;
+      var body = { action: 'event', kind: kind, module: slug, detail: detail || null };
+      try {
+        if (leaving && navigator.sendBeacon) {
+          body.token = token;
+          if (navigator.sendBeacon(FN, new Blob([JSON.stringify(body)], { type: 'text/plain' }))) return;
+          delete body.token;
+        }
+        fetch(FN, {
+          method: 'POST', keepalive: !!leaving,
+          headers: { Authorization: 'Bearer ' + token, apikey: cfg.key, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    function download(url, size, progress) {
+      return fetch(url).then(function (res) {
+        if (!res.ok) throw new Error('COULD NOT LOAD');
+        var total = size || +res.headers.get('content-length') || 0, got = 0, chunks = [];
+        if (!res.body || !res.body.getReader) return res.blob();
+        var reader = res.body.getReader();
+        return (function pump() {
+          return reader.read().then(function (r) {
+            if (r.done) return new Blob(chunks);
+            chunks.push(r.value); got += r.value.length;
+            if (total && progress) progress(Math.min(1, got / total));
+            return pump();
+          });
+        })();
+      });
+    }
+
+    // A lesson is downloaded once and kept on this device (cleared at sign-out); it is fetched
+    // again only when the file in storage changes. The gateway is still asked every time, so
+    // every open is checked and logged.
+    function openCache() {
+      try { return window.caches ? caches.open(CACHE).catch(function () { return null; }) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); }
+    }
+    function getFile(path, part, progress) {
+      return gateway({ action: 'open', module: slug, path: path, part: part, signals: sig }).then(function (g) {
+        var key = location.origin + '/__ugl-cache/' + encodeURIComponent(path) + '?v=' + encodeURIComponent(g.etag || '');
+        return openCache().then(function (c) {
+          return (c && g.etag ? c.match(key) : Promise.resolve(null)).then(function (hit) {
+            if (hit) return hit.blob();
+            return download(g.url, g.size, progress).then(function (blob) {
+              if (c && g.etag) {
+                c.keys().then(function (ks) {
+                  ks.forEach(function (k) { if (k.url.indexOf('/__ugl-cache/' + encodeURIComponent(path) + '?') > 0 && k.url !== key) c.delete(k); });
+                }).catch(function () {});
+                c.put(key, new Response(blob)).catch(function () {});
+              }
+              return blob;
+            });
+          });
+        });
+      });
+    }
+
+    // ---- Narration for decks built by tools/build_decks.py: the slides show first, the voice
+    // pack follows (audio/<deck>.pack: 4-byte header length, JSON {id: [offset, length]}, MP3s).
+    function loadNarration() {
+      var path = 'audio/' + file.replace(/\.html$/, '.pack');
+      guard.toast('Loading narration…', 0);
+      getFile(path, 'audio', function (p) { guard.toast('Loading narration… ' + Math.round(p * 100) + '%', 0); }).then(function (blob) {
+        return blob.slice(0, 4).arrayBuffer().then(function (b) {
+          var n = new DataView(b).getUint32(0, true);
+          return blob.slice(4, 4 + n).text().then(function (t) {
+            var head = JSON.parse(t), base = 4 + n, A = window.UGL_AUDIO || (window.UGL_AUDIO = {});
+            Object.keys(head).forEach(function (k) {
+              A[k] = URL.createObjectURL(blob.slice(base + head[k][0], base + head[k][0] + head[k][1], 'audio/mpeg'));
+            });
+          });
+        });
+      }).then(function () { guard.toast('Narration ready', 1600); }, function (e) {
+        guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Narration could not load. Refresh the page to try again.', 6000);
+      });
+    }
+
+    function protect() { guard.install({ name: name, report: report }); readButton(); }
+
+    // Course lessons count toward progress only when the trainee marks them as read (lesson_done).
+    function readButton() {
+      if (item.section !== 'course') return;
+      var css = document.createElement('style');
+      css.textContent =
+        '.ugl-read{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483640;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;' +
+        'border-radius:999px;border:1px solid rgba(128,128,128,.45);background:rgba(20,20,22,.92);color:#f2f2f3;font:600 13.5px/1 system-ui,-apple-system,"Segoe UI",sans-serif;' +
+        'cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3);backdrop-filter:blur(6px)}' +
+        '.ugl-read::before{content:"";width:13px;height:13px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}' +
+        '.ugl-read:hover{border-color:#c2412f}.ugl-read:disabled{opacity:.6;cursor:wait}' +
+        '.ugl-read.is-on{background:#1f3a2b;border-color:#3e7f5c;color:#bfe6cc}.ugl-read.is-on::before{content:"\\2713";border:0;width:auto;height:auto}' +
+        '[data-theme="light"] .ugl-read{background:rgba(251,247,238,.95);color:#2B2620;border-color:rgba(43,38,32,.25)}' +
+        '[data-theme="light"] .ugl-read.is-on{background:#e3efe6;color:#2f6b4a;border-color:#3e7f5c}' +
+        '.ugl-toast{bottom:72px!important}@media print{.ugl-read{display:none}}';
+      document.head.appendChild(css);
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ugl-read'; b.disabled = true; b.textContent = 'Mark as read';
+      document.body.appendChild(b);
+      var on = false;
+      function show() {
+        b.classList.toggle('is-on', on);
+        b.textContent = on ? 'Read · mark as unread' : 'Mark as read';
+        b.setAttribute('aria-pressed', on);
+      }
+      db.from('lesson_done').select('module').eq('module', slug).then(function (r) {
+        on = !!(r.data && r.data.length); show(); b.disabled = false;
+      });
+      b.addEventListener('click', function () {
+        var want = !on;
+        b.disabled = true;
+        var q = want ? db.from('lesson_done').insert({ module: slug }) : db.from('lesson_done').delete().eq('module', slug);
+        q.then(function (r) {
+          b.disabled = false;
+          if (r.error && r.error.code !== '23505') { guard.toast('Could not save that. Try again.'); return; }
+          on = want; show();
+          guard.toast(on ? 'Marked as read' : 'Marked as unread', 1600);
+        });
+      });
+    }
+
+    // ---- HTML lessons (decks and built pages): replace this page with the lesson.
+    function showHtml(html) {
+      var deferredVoice = /window\.UGL_AUDIO \|\|/.test(html);
+      document.open();
+      document.write(html);
+      document.close();
+      var back = document.querySelector('.topbar .back');
+      if (back) { back.href = 'index.html#' + item.section; back.textContent = '← ' + SECTION[item.section]; }
+      var home = document.querySelector('a.homebtn');
+      if (home) home.href = 'index.html#course';
+      var sub = document.querySelector('.topbar__sub');
+      if (sub && /ACADEMY/.test(sub.textContent)) sub.textContent = '/ TRAINING COURSE';
+      protect();
+      if (deferredVoice) loadNarration();
+      // Deep links like module.html?m=email-course#m6: jump to the section once the page has laid out.
+      if (location.hash.length > 1) {
+        var jump = function () { var t = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) t.scrollIntoView(); };
+        if (document.readyState === 'complete') jump(); else window.addEventListener('load', jump, { once: true });
+      }
+      if (item.kind !== 'deck') { window.uglTheme.addButton(document); return; }
+      // A deck's own scripts run only after its stylesheets load, so sync its switch once it has finished loading.
+      var sync = function () { window.uglTheme.syncDeck(document); };
+      if (document.readyState === 'complete') sync(); else window.addEventListener('load', sync, { once: true });
+    }
+
+    // ---- PDFs: render every page inside the site with pdf.js (vendor/pdfjs).
+    function showPdf(bytes) {
+      document.title = item.title + ' · Unified Service and Consulting';
+      ['https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap', 'ugl-site.css', 'ugl-page.css']
+        .forEach(function (href) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); });
+      document.head.querySelector('style').remove();
+      document.body.className = 'ugl-unlocked';
+      document.body.innerHTML =
+        '<div class="app-shell"><header class="topbar"><div class="topbar__brand"><img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">' +
+        '<div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ TRAINING COURSE</span></div></div>' +
+        '<div class="topbar__right"><a class="back" href="index.html#' + item.section + '">← ' + SECTION[item.section] + '</a></div></header>' +
+        '<main class="page page--wide"><section class="page-hero"><div class="eyebrow"><i></i><span id="pdf-k">DOCUMENT</span></div><h1>' + esc(item.title) + '</h1>' +
+        '<p class="lead">' + esc(item.desc) + '</p></section>' +
+        '<div class="pdf-bar"><span id="pdf-pos">Loading pages…</span><div class="pdf-zoom"><button type="button" class="pdf-z" data-z="-1" aria-label="Zoom out">−</button>' +
+        '<button type="button" class="pdf-z pdf-z--fit" data-z="0" aria-label="Fit to width"><span id="pdf-pct">100%</span></button>' +
+        '<button type="button" class="pdf-z" data-z="1" aria-label="Zoom in">+</button></div></div>' +
+        '<div class="pdf-pages" id="pdf-pages"></div></main></div>';
+      window.uglTheme.addButton(document);
+      protect();
+
+      var pagesEl = document.getElementById('pdf-pages'), zoom = 1, pdf, figs = [];
+      function width(fig) { return fig.clientWidth || pagesEl.clientWidth; }
+      function render(fig) {
+        var n = +fig.getAttribute('data-n'), w = width(fig);
+        if (fig._w === w) return;
+        fig._w = w;
+        pdf.getPage(n).then(function (page) {
+          var base = page.getViewport({ scale: 1 });
+          var dpr = Math.min(window.devicePixelRatio || 1, 2);
+          var vp = page.getViewport({ scale: w / base.width * dpr });
+          var canvas = fig.querySelector('canvas');
+          canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+          fig.style.aspectRatio = base.width + ' / ' + base.height;
+          return page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        }).then(function () { fig.classList.add('is-ready'); }, function () {});
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) render(e.target); });
+      }, { rootMargin: '800px 0px' });
+      function setZoom(z) {
+        zoom = Math.max(0.6, Math.min(2, z));
+        pagesEl.parentNode.style.setProperty('--pdf-zoom', zoom);
+        document.getElementById('pdf-pct').textContent = Math.round(zoom * 100) + '%';
+        figs.forEach(function (f) { f._w = 0; io.unobserve(f); io.observe(f); });
+      }
+      document.querySelectorAll('.pdf-z').forEach(function (b) {
+        b.addEventListener('click', function () { var d = +b.getAttribute('data-z'); setZoom(d ? zoom + d * 0.2 : 1); });
+      });
+      function where() {
+        var mid = window.innerHeight / 2, cur = 1;
+        figs.forEach(function (f) { if (f.getBoundingClientRect().top < mid) cur = +f.getAttribute('data-n'); });
+        document.getElementById('pdf-pos').textContent = 'Page ' + cur + ' of ' + figs.length;
+      }
+      window.addEventListener('scroll', where, { passive: true });
+      window.addEventListener('resize', function () { figs.forEach(function (f) { f._w = 0; io.unobserve(f); io.observe(f); }); });
+
+      import('./vendor/pdfjs/pdf.min.mjs').then(function (pdfjs) {
+        pdfjs.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.mjs';
+        return pdfjs.getDocument({ data: new Uint8Array(bytes), standardFontDataUrl: 'vendor/pdfjs/standard_fonts/', isEvalSupported: false }).promise;
+      }).then(function (doc) {
+        pdf = doc;
+        document.getElementById('pdf-k').textContent = 'DOCUMENT · ' + doc.numPages + (doc.numPages > 1 ? ' PAGES' : ' PAGE');
+        return doc.getPage(1).then(function (p1) {
+          var v = p1.getViewport({ scale: 1 });
+          for (var i = 1; i <= doc.numPages; i++) {
+            var fig = document.createElement('figure');
+            fig.className = 'pdf-page'; fig.setAttribute('data-n', i);
+            fig.style.aspectRatio = v.width + ' / ' + v.height;
+            fig.innerHTML = '<canvas aria-label="Page ' + i + ' of ' + doc.numPages + '"></canvas>';
+            pagesEl.appendChild(fig); figs.push(fig); io.observe(fig);
+          }
+          where();
+        });
+      }).catch(function () {
+        pagesEl.innerHTML = '<p class="note">This document could not be displayed. Refresh the page to try again.</p>';
+      });
+    }
+
+    if (!file) { fail('NOT AVAILABLE'); return; }
+
+    db.auth.onAuthStateChange(function (e, s) { if (s) token = s.access_token; });
+    db.auth.getSession().then(function (r) {
+      var session = r.data && r.data.session;
+      if (!session) { location.replace('index.html'); return; }
+      token = session.access_token;
+      var email = session.user && session.user.email || '', dom = '@' + cfg.userDomain;
+      name = email.slice(-dom.length) === dom ? email.slice(0, -dom.length) : email;
+      sig = guard.signals();
+      var fill = document.getElementById('fill');
+      return getFile(file, 'main', function (p) { fill.style.width = p * 100 + '%'; }).then(function (blob) {
+        if (/\.pdf$/.test(file)) return blob.arrayBuffer().then(showPdf);
+        return blob.text().then(showHtml);
+      });
+    }).catch(function (err) { fail(err.message || 'COULD NOT LOAD'); });
+  })();
+  </script>
+</body>
+</html>

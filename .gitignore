@@ -1,0 +1,13 @@
+# Local tooling / editor config
+.claude/
+
+# ElevenLabs voice audition scratch (not part of the site)
+voice-samples/
+
+# Course content lives in the private ugl-training-sources repo, never here.
+sources/
+upload-to-supabase/
+decks/
+UGL-*-Final.html
+
+__pycache__/
