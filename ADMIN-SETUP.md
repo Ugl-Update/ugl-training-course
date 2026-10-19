@@ -28,7 +28,7 @@ People sign in with a plain **username** and a password. Supabase needs an email
 
 **Forgotten password**: Admin page → the person's row → **Reset password**. Keep the suggested password or type your own; the page shows it to hand over.
 
-Both go through the `admin-users` Edge Function (source in `supabase/functions/admin-users/`), which refuses anyone who is not an admin and records every change in `security_events` (kind `admin`).
+These and the account actions below go through the `admin-users` Edge Function (source in `supabase/functions/admin-users/`), which refuses anyone who is not an admin and records every change in `security_events` (kind `admin`).
 
 Without the Admin page: Supabase dashboard → Authentication → Users → Add user → Create new user (email = username + `@ugldispatch.com`, tick **Auto Confirm User**). Password from SQL:
 
@@ -38,13 +38,12 @@ set encrypted_password = extensions.crypt('NewPassword123', extensions.gen_salt(
 where email = 'omar@ugldispatch.com';
 ```
 
-Pause someone's access from the **Admin** page (Block), or delete the user / **Ban user** in the dashboard. Deleting a user also deletes their progress history.
+On the **Admin** page, each person's row also has:
+- **Block / Unblock**: block signs them out within half a minute, wherever they are, and stops them signing in. Unblock lets them sign in again.
+- **More → Make admin / Remove admin rights**: making someone an admin also removes any access limit on them.
+- **More → Delete account**: you have to type their username to confirm. Their progress, lesson history and access settings are deleted with the account. The activity log keeps their past events, without a name.
 
-**Make an existing person an admin** (SQL Editor):
-
-```sql
-insert into public.admins (user_id) select id from auth.users where email = 'alaa@ugldispatch.com';
-```
+Nobody can block, delete or remove admin rights from their own account, so there is always at least one admin. Admins cannot be blocked; remove their admin rights first.
 
 ## Changing content
 
@@ -87,7 +86,7 @@ In the private repo, `sources/legacy/` holds the older "Policy and Charges" docu
 Admins (listed in `public.admins`) see an **ADMIN** button in the top bar. `admin.html` shows, for the last 30 days:
 - every trainee's lessons marked as read, last lesson opened and reading time, with a per-lesson list (marked or not, times opened, reading time) and activity trail;
 - alerts: failed sign-ins (which account was tried, how many times, from which device and address), lessons marked as read without ever being opened, refused requests (scripts, bots, robot-driven or headless browsers, AI browsers that name themselves, other websites, too many lessons too fast), copy / print / save attempts with what was selected, and pages left open with no mouse, keyboard, touch or scrolling;
-- **Block / Unblock**: a blocked trainee can still sign in but cannot open any lesson.
+- **Block / Unblock**: blocking uses Supabase's own ban. The sign-in server refuses the person from then on, so open pages sign them out within half a minute (every page checks every 30 seconds, and whenever the tab comes back into view) and show "Your access is paused". They cannot sign in again until you unblock them. The lesson gateway refuses them at once.
 - **Access**: choose what one person can open:
   - **Everything** (the default);
   - **Tools only** (every tool, including tools added later, and no lessons);

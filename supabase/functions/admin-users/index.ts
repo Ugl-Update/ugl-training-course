@@ -2,9 +2,18 @@
 //
 // POST { action: "create",   username, password, admin? } -> { id, username }
 // POST { action: "password", user_id, password }           -> { ok }
+// POST { action: "block",    user_id, reason? }            -> { ok }   signs them out and stops sign-in
+// POST { action: "unblock",  user_id }                     -> { ok }
+// POST { action: "role",     user_id, admin }              -> { ok }   make or stop being an admin
+// POST { action: "delete",   user_id }                     -> { ok }
 //
 // People sign in with a plain username; behind the scenes the account is <username>@ugldispatch.com
 // (see ugl-config.js). Every change is written to security_events as kind "admin".
+// Nobody can block, delete or change the role of their own account, so there is always an admin.
+//
+// Blocking uses Supabase's ban: the sign-in server refuses the person from then on (sign in, renew,
+// "who am I"), so their open pages notice within half a minute (ugl-auth.js) and sign out, and the
+// content gateway refuses them at once. The blocked_users row is what the admin page reads.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -79,6 +88,64 @@ Deno.serve(async (req) => {
     const { data, error } = await db.auth.admin.updateUserById(id, { password: body.password });
     if (error || !data.user) return json({ error: "Could not change the password: " + (error?.message || "unknown error") }, 500);
     await log({ action: "reset-password", username: (data.user.email || "").replace("@" + DOMAIN, "") });
+    return json({ ok: true });
+  }
+
+  if (["block", "unblock", "role", "delete"].includes(body.action)) {
+    const id = String(body.user_id || "");
+    if (!UUID.test(id)) return json({ error: "Bad request." }, 400);
+    if (id === me.id) return json({ error: "You cannot do that to your own account." }, 400);
+    const { data: found } = await db.auth.admin.getUserById(id);
+    if (!found?.user) return json({ error: "That account no longer exists." }, 404);
+    const username = (found.user.email || "").replace("@" + DOMAIN, "");
+    const { data: adminRow } = await db.from("admins").select("user_id").eq("user_id", id).maybeSingle();
+    const { data: blockRow } = await db.from("blocked_users").select("user_id").eq("user_id", id).maybeSingle();
+
+    if (body.action === "block") {
+      if (adminRow) return json({ error: "Admins cannot be blocked. Remove their admin rights first." }, 400);
+      const reason = typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 300) : null;
+      if (!blockRow) {
+        const { error } = await db.from("blocked_users").insert({ user_id: id, reason, blocked_by: me.id });
+        if (error) return json({ error: "Could not block: " + error.message }, 500);
+      }
+      const { error } = await db.auth.admin.updateUserById(id, { ban_duration: "876000h" });
+      if (error) return json({ error: "Blocked from lessons, but could not stop their sign-in: " + error.message }, 500);
+      await log({ action: "block", username, reason });
+      return json({ ok: true });
+    }
+
+    if (body.action === "unblock") {
+      const { error: banErr } = await db.auth.admin.updateUserById(id, { ban_duration: "none" });
+      if (banErr) return json({ error: "Could not unblock: " + banErr.message }, 500);
+      const { error } = await db.from("blocked_users").delete().eq("user_id", id);
+      if (error) return json({ error: "Could not unblock: " + error.message }, 500);
+      await log({ action: "unblock", username });
+      return json({ ok: true });
+    }
+
+    if (body.action === "role") {
+      if (body.admin === true) {
+        if (blockRow) return json({ error: "Unblock them first." }, 400);
+        if (!adminRow) {
+          const { error } = await db.from("admins").insert({ user_id: id });
+          if (error) return json({ error: "Could not make them an admin: " + error.message }, 500);
+        }
+        // Admins see everything, so any access limit goes.
+        await db.from("user_access").delete().eq("user_id", id);
+        await log({ action: "make-admin", username });
+      } else {
+        const { error } = await db.from("admins").delete().eq("user_id", id);
+        if (error) return json({ error: "Could not remove admin rights: " + error.message }, 500);
+        await log({ action: "remove-admin", username });
+      }
+      return json({ ok: true });
+    }
+
+    // Delete: their progress, opens, access limit and block go with the account; the activity log and
+    // alerts stay, without a name.
+    const { error } = await db.auth.admin.deleteUser(id);
+    if (error) return json({ error: "Could not delete the account: " + error.message }, 500);
+    await log({ action: "delete-user", username, was_admin: !!adminRow });
     return json({ ok: true });
   }
 
