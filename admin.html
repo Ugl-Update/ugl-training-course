@@ -71,6 +71,11 @@
     .cred-box code{font:600 15px var(--u-mono);color:var(--u-text);background:var(--u-inset);border:1px solid var(--u-line);border-radius:6px;padding:3px 8px;margin-left:6px}
     .cred small{display:block;font-size:13px;color:var(--u-muted)}
     .pill.is-limit{color:var(--u-amber);border-color:var(--u-amber)}
+    .more>summary{list-style:none;cursor:pointer;user-select:none}
+    .more>summary::-webkit-details-marker{display:none}
+    .more[open]{flex-basis:100%;display:flex;flex-direction:column;align-items:flex-end}
+    .more__menu{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}
+    .btn.is-danger{color:var(--u-red-ink);border-color:rgba(var(--u-red-rgb),.5)}
     .acc h3{margin-top:14px}
     .acc-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 14px}
     .acc-mode{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--u-line-2);border-radius:12px;background:var(--u-surface);cursor:pointer;min-width:0}
@@ -316,6 +321,11 @@
           (u.is_admin ? '' : '<button type="button" class="btn btn--ghost" data-access="' + u.id + '">' + (editing ? 'Close access' : 'Access') + '</button>') +
           '<button type="button" class="btn btn--ghost" data-pw="' + u.id + '">Reset password</button>' +
           (u.is_admin ? '' : u.blocked ? '<button type="button" class="btn" data-unblock="' + u.id + '">Unblock</button>' : '<button type="button" class="btn btn--ghost" data-block="' + u.id + '">Block</button>') +
+          // Your own account has no More menu: nobody can delete themselves or drop their own admin rights.
+          (u.id === me.id ? '' : '<details class="more"><summary class="btn btn--ghost">More</summary><div class="more__menu">' +
+            (u.is_admin ? '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="0">Remove admin rights</button>'
+              : '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="1">Make admin</button>') +
+            '<button type="button" class="btn btn--ghost is-danger" data-delete="' + u.id + '">Delete account</button></div></details>') +
           '</div></td></tr>';
         if (editing) h += '<tr class="detail"><td colspan="7">' + accessEditor(u, lim) + '</td></tr>';
         if (open) h += '<tr class="detail"><td colspan="7">' + detail(s, alerts) + '</td></tr>';
@@ -427,19 +437,36 @@
       if (id) { openUser = openUser === id ? null : id; render(); return; }
       id = b.getAttribute('data-access');
       if (id || b.hasAttribute('data-acc-close')) { accessUser = id && accessUser !== id ? id : null; accessNote = null; render(); return; }
+      // Block, unblock, admin rights and delete all go through the admin-users function.
+      var act = function (body) {
+        b.disabled = true;
+        return accounts(body).then(refresh, function (err) { b.disabled = false; alert(err.message); });
+      };
+      var nameOf = function (uid) { return uname(data.users.filter(function (x) { return x.id === uid; })[0].email); };
       id = b.getAttribute('data-block');
       if (id) {
-        var u = data.users.filter(function (x) { return x.id === id; })[0];
-        var why = prompt('Block ' + uname(u.email) + '? They will not be able to open any lesson until you unblock them.\n\nReason (optional):', '');
-        if (why === null) return;
-        b.disabled = true;
-        db.from('blocked_users').insert({ user_id: id, reason: why || null }).then(function (r) { if (r.error) alert(r.error.message); return refresh(); });
+        var why = prompt('Block ' + nameOf(id) + '? They are signed out within half a minute and cannot sign in or open anything until you unblock them.\n\nReason (optional):', '');
+        if (why !== null) act({ action: 'block', user_id: id, reason: why });
         return;
       }
       id = b.getAttribute('data-unblock');
+      if (id) { act({ action: 'unblock', user_id: id }); return; }
+      id = b.getAttribute('data-role');
       if (id) {
-        b.disabled = true;
-        db.from('blocked_users').delete().eq('user_id', id).then(function (r) { if (r.error) alert(r.error.message); return refresh(); });
+        var up = b.getAttribute('data-admin') === '1';
+        if (confirm(up ? 'Make ' + nameOf(id) + ' an admin? They will see this page and all activity, and can add, block and delete people. Any access limit on them is removed.'
+          : 'Remove admin rights from ' + nameOf(id) + '? They become a trainee and lose this page.')) act({ action: 'role', user_id: id, admin: up });
+        return;
+      }
+      id = b.getAttribute('data-delete');
+      if (id) {
+        var who2 = nameOf(id);
+        var typed = prompt('Delete ' + who2 + "'s account? This cannot be undone: they are signed out, and their progress, lesson history and access settings are deleted. The activity log keeps their past events without a name.\n\nType the username to confirm:", '');
+        if (typed === null) return;
+        if (typed.trim().toLowerCase() !== who2) { alert('The username did not match, so nothing was deleted.'); return; }
+        if (openUser === id) openUser = null;
+        if (accessUser === id) accessUser = null;
+        act({ action: 'delete', user_id: id });
       }
     });
     // Access editor: the three choices, and the tick boxes (a group's top box ticks the whole group).
@@ -481,6 +508,8 @@
       var session = r.data && r.data.session;
       if (!session) { location.replace('index.html'); return; }
       me = session.user;
+      // An admin whose account is deleted or blocked by another admin is sent to the login too.
+      window.uglWatchSession(function (reason) { location.replace('index.html?out=' + reason); });
       return db.rpc('is_admin').then(function (a) {
         if (a.data !== true) { out.innerHTML = '<div class="adm-empty">This page is for admins.</div>'; return; }
         document.getElementById('people').hidden = false;

@@ -69,6 +69,10 @@
     loginBtn.disabled = true;
     db.auth.signInWithPassword({ email: em, password: pass.value }).then(function (r) {
       loginBtn.disabled = false;
+      if (r.error && (r.error.code === 'user_banned' || /banned/i.test(r.error.message || ''))) {
+        show(loginErr, ENDED.blocked);
+        return;
+      }
       if (r.error) {
         show(loginErr, 'Incorrect username or password.');
         // Tell the admin page someone tried this account (the password is never sent).
@@ -106,10 +110,24 @@
     db.auth.signOut().then(showLogin);
   });
 
+  // Signed out by the server: blocked or deleted by an admin (ugl-auth.js), here or on a lesson page.
+  var ENDED = {
+    blocked: 'Your access is paused. Contact your trainer.',
+    ended: 'You have been signed out. Sign in again, or contact your trainer if that does not work.'
+  };
+  function signedOutByServer(reason) {
+    showLogin();
+    show(loginErr, ENDED[reason] || ENDED.ended);
+  }
+  window.uglWatchSession(signedOutByServer);
+  var out = (location.search.match(/[?&]out=(blocked|ended)\b/) || [])[1];
+  if (out) history.replaceState(null, '', location.pathname + location.hash);
+
   db.auth.getSession().then(function (r) {
     var session = r.data && r.data.session;
     if (session && needsPassword) { showSetPassword(); return; }
     if (session) { showCourse(session.user); return; }
     showLogin();
+    if (out) show(loginErr, ENDED[out]);
   });
 })();

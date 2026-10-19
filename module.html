@@ -165,7 +165,11 @@
       });
     }
 
-    function protect() { guard.install({ name: name, report: report }); readButton(); }
+    function protect() {
+      guard.install({ name: name, report: report }); readButton();
+      // Blocked or deleted while reading: leave the lesson for the login screen (ugl-auth.js).
+      window.uglWatchSession(function (reason) { location.replace('index.html?out=' + reason); });
+    }
 
     // Course lessons count toward progress only when the trainee marks them as read (lesson_done).
     function readButton() {
