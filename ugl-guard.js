@@ -1,7 +1,9 @@
 // Protection for lesson pages, installed by module.html after a lesson is shown.
 // Nothing in a browser can stop someone photographing their screen, so this aims to make copying
 // awkward, mark every page with the viewer's name, and tell the admin when something looks wrong:
-//   - copy, cut, right-click, save, print and view-source are turned off (and reported);
+//   - copy, cut, right-click, save, print and view-source are turned off and reported; the gateway
+//     counts copy / print / save attempts, the first two get a warning and the third in a day
+//     blocks the account (opts.onBlocked);
 //   - a faint watermark with the viewer's username and the date covers the page;
 //   - reading time and whether any mouse, keyboard, touch or scroll happened are reported, so the
 //     admin can spot pages that were "read" by a tool rather than a person.
@@ -56,7 +58,20 @@
   function install(opts) {
     var report = opts.report, name = opts.name || 'trainee', last = {};
     // Report each kind at most every 15 seconds so one held key cannot flood the log.
-    function once(kind, detail) { var now = Date.now(); if (last[kind] && now - last[kind] < 15000) return; last[kind] = now; report(kind, detail); }
+    function once(kind, detail) { var now = Date.now(); if (last[kind] && now - last[kind] < 15000) return null; last[kind] = now; return report(kind, detail); }
+    // Copy, print and save: the gateway counts attempts. Two warnings, the third in a day blocks.
+    function attempt(kind, detail, what) {
+      toast(what + ' This attempt has been reported to the admin.', 6000);
+      var p = once(kind, detail);
+      if (p && p.then) p.then(function (a) {
+        if (!a) return;
+        if (a.blocked) { if (opts.onBlocked) opts.onBlocked(a.why); return; }
+        if (!a.limit || !a.strikes) return;
+        var left = a.limit - a.strikes;
+        toast(what + ' This attempt has been reported to the admin. ' +
+          (left <= 1 ? 'Last warning: one more attempt today blocks your access.' : 'Warning ' + a.strikes + ' of ' + (a.limit - 1) + ': attempt ' + a.limit + ' today blocks your access.'), 9000);
+      });
+    }
     function editable(t) { return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]'); }
 
     var style = document.createElement('style');
@@ -73,8 +88,7 @@
       if (editable(e.target)) return;
       var text = String(window.getSelection ? window.getSelection() : '');
       e.preventDefault();
-      toast('Copying course material is turned off.');
-      once('copy', { chars: text.length, sample: text.slice(0, 80) });
+      attempt('copy', { chars: text.length, sample: text.slice(0, 80) }, 'Copying course material is not allowed.');
     }
     document.addEventListener('copy', blockCopy, true);
     document.addEventListener('cut', blockCopy, true);
@@ -85,10 +99,9 @@
       var k = (e.key || '').toLowerCase(), kind = k === 's' ? 'save' : k === 'p' ? 'print' : k === 'u' ? 'save' : '';
       if (!kind) return;
       e.preventDefault();
-      toast(kind === 'print' ? 'Printing course material is turned off.' : 'Saving course material is turned off.');
-      once(kind, { key: k });
+      attempt(kind, { key: k }, kind === 'print' ? 'Printing course material is not allowed.' : k === 'u' ? 'Viewing the page source is not allowed.' : 'Saving course material is not allowed.');
     }, true);
-    window.addEventListener('beforeprint', function () { once('print', { via: 'menu' }); });
+    window.addEventListener('beforeprint', function () { attempt('print', { via: 'menu' }, 'Printing course material is not allowed.'); });
 
     // Reading time per visible stretch, with how much real input happened.
     var c, visibleMs = 0, since = document.visibilityState === 'visible' ? Date.now() : 0, lastMove = 0, lastScroll = 0;
