@@ -117,4 +117,4 @@ The Edge Function `course-admin` (source in `supabase/functions/course-admin/`) 
 
 ## Public repo warning
 
-This repo is public and only holds the site itself (login, portal, styles, tools). The decks, documents and built pages were moved to the private `ugl-training-sources` repo, but older commits and pull request #1 still contain them. To remove them completely, make this repo private (GitHub Pages then needs a paid plan or another host) or move the site to a fresh repository.
+This repo is public and only holds the site itself (login, portal, styles, tools). Never commit course content here: decks, documents, built pages and their photos belong in the private `ugl-training-sources` repo. The site was moved to this fresh repository so that its history holds none of them; the old repository with that history, `ugl-training-course-old`, is private.
