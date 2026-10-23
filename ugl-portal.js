@@ -42,9 +42,15 @@
     alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/><path d="M8 10.5h5M10.5 8v5"/>',
     mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
-    chat: '<path d="M4 5h11a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z"/><path d="M17 9h3a2 2 0 012 2v5a2 2 0 01-2 2h-1v3l-4-3h-3"/>'
+    chat: '<path d="M4 5h11a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z"/><path d="M17 9h3a2 2 0 012 2v5a2 2 0 01-2 2h-1v3l-4-3h-3"/>',
+    stop: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 000-6H9a3 3 0 010-6h6.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    card: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 14.5h4"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 016.5 18H20v3H6.5"/>',
+    users: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 5.2a3.5 3.5 0 010 6.6M18 14.5a6.5 6.5 0 013.5 5.5"/>'
   };
-  var KIND_ICON = { deck: 'deck', policy: 'policy', ref: 'ref', file: 'file', summary: 'summary', tool: 'calc', sim: 'chat' };
+  var KIND_ICON = { deck: 'deck', policy: 'policy', ref: 'ref', file: 'file', summary: 'summary', tool: 'calc', sim: 'chat', stop: 'stop' };
   function icon(it) {
     return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
       ICONS[it.icon || KIND_ICON[it.kind] || 'file'] + '</svg>';
@@ -129,6 +135,16 @@
   }
 
   function grid(items) { var g = el('div', 'cards'); items.forEach(function (it) { g.appendChild(card(it)); }); return g; }
+  // The road: stops in order along a line, each one a normal lesson card.
+  function road(items) {
+    var r = el('ol', 'road');
+    items.forEach(function (it) {
+      var li = el('li', 'road__stop', '<span class="road__n" aria-hidden="true"></span>');
+      txt(li, '.road__n', /^road-po$/.test(it.id) ? 'PO' : it.id.replace(/^road-/, ''));
+      li.appendChild(card(it)); r.appendChild(li);
+    });
+    return r;
+  }
 
   function hero(eyebrow, title, lead) {
     var h = el('section', 'hero', '<div class="hero__eyebrow"><span></span><b></b></div><h1></h1><p></p>');
@@ -179,20 +195,25 @@
   function viewCourse() {
     var v = el('div', 'view');
     v.appendChild(hero('COURSE · ' + lessons.length + ' LESSONS', 'Unified Service and Consulting Training Course',
-      'Work through the tracks in order. When you finish a lesson, mark it as read; that is what counts toward your progress.'));
+      'Start with the road: one load, stop by stop, from the rate confirmation to the POD. When you finish a lesson, mark it as read; that is what counts toward your progress.'));
     var find = el('input', 'search'); find.type = 'search'; find.id = 'find'; find.placeholder = 'Search lessons and policies…';
     find.setAttribute('aria-label', 'Search the course'); find.autocomplete = 'off';
     v.appendChild(find);
     var tracks = el('div', ''); tracks.id = 'tracks';
-    cat.tracks.forEach(function (t, ti) {
+    var shown = cat.tracks.filter(function (t) { return ITEMS.some(function (i) { return i.section === 'course' && i.track === t.id; }); });
+    var libHead = false;
+    shown.forEach(function (t, ti) {
       var items = ITEMS.filter(function (i) { return i.section === 'course' && i.track === t.id; });
-      if (!items.length) return;
-      var sec = el('section', 'track', '<div class="track__head"><div class="track__num"></div><div class="track__text"><h2 class="track__title"></h2><p class="track__desc"></p></div>' +
+      if (t.library && !libHead && shown.some(function (x) { return !x.library; })) {
+        libHead = true;
+        tracks.appendChild(el('div', 'lib-head', '<h2>Library</h2><p>The decks, policies and compliance files the road links to. Open them any time; they count toward your progress too.</p>'));
+      }
+      var sec = el('section', 'track' + (t.road ? ' track--road' : ''), '<div class="track__head"><div class="track__num"></div><div class="track__text"><h2 class="track__title"></h2><p class="track__desc"></p></div>' +
         '<div class="track__prog"><span></span><div class="progress"><i></i></div></div></div>');
       sec.id = 'track-' + t.id; sec._items = items.filter(function (i) { return !i.soon; });
       txt(sec, '.track__num', String(ti + 1).padStart(2, '0'));
       txt(sec, '.track__title', t.title); txt(sec, '.track__desc', t.desc);
-      sec.appendChild(grid(items));
+      sec.appendChild(t.road ? road(items) : grid(items));
       tracks.appendChild(sec);
     });
     v.appendChild(tracks);
@@ -202,9 +223,15 @@
       var q = find.value.trim().toLowerCase(), shown = 0;
       tracks.querySelectorAll('.track').forEach(function (sec) {
         var any = 0;
-        sec.querySelectorAll('.lcard').forEach(function (c) { var ok = !q || c._hay.indexOf(q) !== -1; c.hidden = !ok; c.parentNode.hidden = !ok; if (ok) any++; });
+        sec.querySelectorAll('.lcard').forEach(function (c) {
+          var ok = !q || c._hay.indexOf(q) !== -1; c.hidden = !ok; c.parentNode.hidden = !ok;
+          if (c.parentNode.parentNode.classList.contains('road__stop')) c.parentNode.parentNode.hidden = !ok;
+          if (ok) any++;
+        });
         sec.hidden = !any; shown += any;
       });
+      var lh = tracks.querySelector('.lib-head');
+      if (lh) lh.hidden = ![].some.call(tracks.querySelectorAll('.track:not(.track--road)'), function (x) { return !x.hidden; });
       none.style.display = shown ? 'none' : 'block';
     });
     return v;

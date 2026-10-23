@@ -6,12 +6,13 @@
 Reads sources/ and writes upload-to-supabase/ in the private content repo, by default
 ../ugl-training-sources next to this repo (override with UGL_SOURCES). The output
 mirrors the Supabase 'course' bucket:
-  pages/*.html   native pages (policies, tools, references)
+  pages/*.html   native pages (policies, tools, references, the road stops: tools/road.py)
   files/*        PDFs shown as downloads
 Needs: python-docx and poppler's pdftotext.
 """
 import html, json, os, pathlib, re, shutil, subprocess, sys, zlib
 import docx
+from road import Road
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = pathlib.Path(os.environ.get("UGL_SOURCES", ROOT.parent / "ugl-training-sources"))  # private content repo
@@ -303,11 +304,13 @@ def page_fix_weight():
 <label class="field"><label for="t">TRAILER</label><input id="t" type="number" inputmode="numeric" value="33640"></label>
 <div class="grid2"><label class="field"><label for="f">FUEL LEVEL (%)</label><input id="f" type="number" inputmode="numeric" value="40"></label>
 <label class="field"><label for="g">TANK SIZE (GAL)</label><input id="g" type="number" inputmode="numeric" value="240"></label></div>
+<div class="proof"><h4>THE DRIVER SAYS</h4><label><input type="checkbox" id="nt"> <span>The tandem can't slide (stuck, or already all the way)</span></label>
+<label><input type="checkbox" id="nf"> <span>The fifth wheel can't slide</span></label></div>
 <p class="note no-print">Pre-filled with the case from the training: 11,380 / 34,500 / 33,640 at 40% fuel.</p></div>
 <div class="card"><h3>Result</h3><div id="out" style="margin-top:12px"></div></div></div>
 <section class="sec" style="margin-top:34px" id="how"><h2>How it works</h2>
 <div class="grid3">
-<div class="stat"><small>LEGAL LIMITS</small><b>12k · 34k · 34k</b><span>Steer · drive · trailer. Gross 80,000 lb.</span></div>
+<div class="stat"><small>LEGAL LIMITS</small><b>12k · 34k · 34k</b><span>Steer · drive · trailer. Gross 80,000 lb. The steer may go up to 12,400 lb when drive and trailer are at most 34,000 and gross at most 80,000.</span></div>
 <div class="stat"><small>TANDEM</small><b>1 hole = 250 lb</b><span>Forward moves weight from drive to trailer axle.</span></div>
 <div class="stat"><small>FIFTH WHEEL</small><b>1 hole = 500 lb</b><span>Forward moves weight from drive axle to steer.</span></div></div>
 <div class="card" style="margin-top:16px"><h3>The worked case</h3>
@@ -315,35 +318,60 @@ def page_fix_weight():
 <li>Tandem 2 holes forward gives 11,380 / 34,000 / <b>34,140</b>. Now the trailer axle is over. Not good.</li>
 <li>Fifth wheel 1 hole forward instead gives 11,880 / 34,000 / 33,640. Legal.</li>
 <li>Then tandem 1 hole forward gives 11,880 / 33,750 / 33,890. Legal, with 250 lb of room on the drive axle.</li>
-<li>Fuel: the truck scaled at 40% of 240 gal = 96 gal. 250 lb ÷ 7 lb per gal = 35 gal more. 96 + 35 = 131 gal = <b>54%</b>. Tell the fuel team the tank must not go above 54%.</li></ol>
-<p class="note">Always rescale after moving anything. Tank size is taken as 240 gal (trucks run 200–250). Fuel weighs 7 lb per gallon. This calculator follows the training case; confirm real moves against a fresh scale ticket.</p></div></section>"""
+<li>Fuel: the truck scaled at 40% of 240 gal = 96 gal. 250 lb ÷ 7 lb per gal = 35 gal more. 96 + 35 = 131 gal = <b>54%</b>. Tell the fuel team the tank must not go above 54%.</li></ol></div>
+<div class="card"><h3>Gross slightly over 80,000: burn the fuel</h3>
+<ol class="plain"><li>Over by 220 lb with the tank at 98%: 220 ÷ 7 = <b>32 gal</b> to burn, × 6 miles per gallon = <b>192 miles</b>.</li>
+<li>The driver rolls and burns it, but only if <b>all weigh stations on the next ~200 miles are closed</b> (they check the GPS).</li>
+<li>The fuel tanks sit by the drive axle, so the burned fuel comes off the drive axle. Then slide as usual.</li>
+<li>Fuel team: 98% of 240 = 235 gal, − 32 = 203 gal = <b>84%</b> (round down to be safe). "We cannot go above 84 %."</li>
+<li>Too many miles to burn (1,120 lb over = 160 gal = 960 miles): no. The truck goes back to the shipper.</li></ol>
+<p class="note">Always rescale after moving anything. Tank size is taken as 240 gal (trucks run 200–240; ask the fuel team for a specific truck). Fuel weighs 7 lb per gallon and the truck rolls about 6 miles on one. Still stuck: the driver checks the sticker on the door for the axle ratings the manufacturer allows.</p></div></section>"""
     script = """<script>
-(function(){var L={s:12000,d:34000,t:34000,g:80000};
+(function(){var L={s:12000,s2:12400,d:34000,t:34000,g:80000},BURN_MI=200;
 function $(i){return document.getElementById(i)}
 function num(i){return parseFloat($(i).value)||0}
 function fmt(n){return Math.round(n).toLocaleString('en-US')}
-function cls(v,l){return v>l?'bad':'ok'}
-function calc(){var S=num('s'),D=num('d'),T=num('t'),pct=num('f'),tank=num('g')||240,gross=S+D+T,best=null,fewest=null;
- for(var fh=-3;fh<=3;fh++)for(var th=-4;th<=4;th++){var s=S+500*fh,d=D-500*fh-250*th,t=T+250*th;
-  if(s<=L.s&&d<=L.d&&t<=L.t&&s>0&&d>0&&t>0){var moves=Math.abs(fh)+Math.abs(th),head=L.d-d,c={fh:fh,th:th,s:s,d:d,t:t,moves:moves,head:head};
-   if(!fewest||moves<fewest.moves||(moves===fewest.moves&&head>fewest.head))fewest=c;
-   if(!best||head>best.head||(head===best.head&&moves<best.moves))best=c}}
- var h='<div class="grid3" style="margin-bottom:14px">'+['STEER:'+S+':'+L.s,'DRIVE:'+D+':'+L.d,'TRAILER:'+T+':'+L.t].map(function(x){var p=x.split(':');return '<div class="stat '+(+p[1]>+p[2]?'bad-b':'ok-b')+'"><small>'+p[0]+'</small><b class="'+cls(+p[1],+p[2])+'">'+fmt(+p[1])+'</b><span>limit '+fmt(+p[2])+'</span></div>'}).join('')+'</div>';
- if(gross>L.g){return h+'<div class="result result--yes"><h2 class="bad">Over 80,000 lb gross</h2><p>Gross is '+fmt(gross)+' lb. Moving the tandem or fifth wheel cannot fix this; cargo has to come off or a permit is needed.</p></div>'}
- if(S<=L.s&&D<=L.d&&T<=L.t)h+='<p class="ok" style="margin-bottom:12px"><b>All axles are already legal.</b> Moves below only add fuel room.</p>';
- if(!best)return h+'<div class="result result--yes"><h2 class="bad">No fix by sliding</h2><p>No combination of fifth wheel and tandem moves in range makes every axle legal. Shift cargo or call the dispatch manager.</p></div>';
- function mv(c){var a=[];if(c.fh)a.push('Fifth wheel '+Math.abs(c.fh)+' hole'+(Math.abs(c.fh)>1?'s':'')+(c.fh>0?' forward':' back'));if(c.th)a.push('Tandem '+Math.abs(c.th)+' hole'+(Math.abs(c.th)>1?'s':'')+(c.th>0?' forward':' back'));return a.join(' + ')||'No move needed'}
- function fuel(c){var gal=pct/100*tank,extra=Math.floor(Math.max(0,c.head)/7),max=Math.floor((gal+extra)/tank*100);return {gal:gal,extra:extra,max:Math.min(100,max)}}
- function block(t,c){var f=fuel(c);return '<div class="card" style="margin:0 0 12px"><h3>'+t+'</h3><p style="margin:4px 0 10px"><b>'+mv(c)+'</b></p><div class="chipw"><div class="stat"><small>STEER</small><b>'+fmt(c.s)+'</b></div><div class="stat"><small>DRIVE</small><b>'+fmt(c.d)+'</b></div><div class="stat"><small>TRAILER</small><b>'+fmt(c.t)+'</b></div></div>'
-  +'<p style="margin:10px 0 0">Drive-axle room: <b>'+fmt(c.head)+' lb</b> = '+f.extra+' more gal. Truck has '+fmt(f.gal)+' gal, so fuel must stay <b>at or below '+f.max+'%</b>.</p></div>'}
- h+=block('Best for fuel room',best);
- if(fewest&&(fewest.fh!==best.fh||fewest.th!==best.th))h+=block('Fewest moves',fewest);
+function steerOk(s,d,t){return s<=L.s||(s<=L.s2&&d<=L.d&&t<=L.t&&s+d+t<=L.g)}
+function legal(s,d,t){return d<=L.d&&t<=L.t&&steerOk(s,d,t)}
+function search(S,D,T){var best=null,fewest=null,FH=$('nf').checked?0:3,TH=$('nt').checked?0:5;
+ for(var fh=-FH;fh<=FH;fh++)for(var th=-TH;th<=TH;th++){var s=S+500*fh,d=D-500*fh-250*th,t=T+250*th;
+  if(s>0&&d>0&&t>0&&legal(s,d,t)){var moves=Math.abs(fh)+Math.abs(th),head=Math.min(L.d-d,L.g-(s+d+t)),low=s<=L.s?1:0,c={fh:fh,th:th,s:s,d:d,t:t,moves:moves,head:head,low:low};
+   if(!fewest||moves<fewest.moves||(moves===fewest.moves&&(low>fewest.low||(low===fewest.low&&head>fewest.head))))fewest=c;
+   if(!best||low>best.low||(low===best.low&&(head>best.head||(head===best.head&&moves<best.moves))))best=c}}
+ return {best:best,fewest:fewest}}
+function tile(lab,v,lim,warn){var c=v>lim?(warn&&v<=L.s2?'warn':'bad'):'ok';
+ return '<div class="stat '+(c==='bad'?'bad-b':'ok-b')+'"><small>'+lab+'</small><b class="'+(c==='warn'?'':c)+'"'+(c==='warn'?' style="color:var(--u-amber)"':'')+'>'+fmt(v)+'</b><span>limit '+fmt(lim)+(warn?' (12,400 allowed)':'')+'</span></div>'}
+function mv(c){var a=[];if(c.fh)a.push('Fifth wheel '+Math.abs(c.fh)+' hole'+(Math.abs(c.fh)>1?'s':'')+(c.fh>0?' forward':' back'));if(c.th)a.push('Tandem '+Math.abs(c.th)+' hole'+(Math.abs(c.th)>1?'s':'')+(c.th>0?' forward':' back'));return a.join(' + ')||'No move needed'}
+function calc(){var S=num('s'),D=num('d'),T=num('t'),pct=num('f'),tank=num('g')||240,gross=S+D+T,have=pct/100*tank;
+ var h='<div class="grid3" style="margin-bottom:14px">'+tile('STEER',S,L.s,true)+tile('DRIVE',D,L.d)+tile('TRAILER',T,L.t)+'</div>';
+ h+='<p style="margin:-4px 0 12px">Gross: <b class="'+(gross>L.g?'bad':'ok')+'">'+fmt(gross)+' lb</b> (limit 80,000).</p>';
+ function block(t,c,burned){var maxGal=have-(burned||0),extra=burned?0:Math.floor(Math.max(0,c.head)/7),max=Math.min(100,Math.floor((maxGal+extra)/tank*100));
+  return '<div class="card" style="margin:0 0 12px"><h3>'+t+'</h3><p style="margin:4px 0 10px"><b>'+mv(c)+'</b></p><div class="chipw"><div class="stat"><small>STEER</small><b>'+fmt(c.s)+'</b></div><div class="stat"><small>DRIVE</small><b>'+fmt(c.d)+'</b></div><div class="stat"><small>TRAILER</small><b>'+fmt(c.t)+'</b></div></div>'
+  +(c.s>L.s?'<p class="note" style="margin-top:8px">Steer '+fmt(c.s)+' lb is allowed: drive and trailer are at most 34,000 and gross at most 80,000 (up to 12,400 lb).</p>':'')
+  +(burned?'<p style="margin:10px 0 0">After burning, fuel must stay <b>at or below '+max+'%</b>. Tell the fuel team.</p>'
+   :'<p style="margin:10px 0 0">Room: <b>'+fmt(Math.max(0,c.head))+' lb</b> = '+extra+' more gal. Truck has '+fmt(have)+' gal, so fuel must stay <b>at or below '+max+'%</b>.</p>')+'</div>'}
+ function burnPlan(over,why){var gal=Math.ceil(over/7),mi=gal*6;
+  if(gal>have)return '<div class="result result--yes"><h2 class="bad">Back to the shipper</h2><p>'+why+' needs '+gal+' gal burned, but the truck only has '+fmt(have)+' gal. The load has to be fixed at the shipper.</p></div>';
+  if(mi>BURN_MI)return '<div class="result result--yes"><h2 class="bad">Back to the shipper</h2><p>'+why+': '+fmt(over)+' lb = '+gal+' gal = about '+fmt(mi)+' miles of driving. Too far to pass no open weigh station. The truck goes back to the shipper.</p></div>';
+  return {gal:gal,mi:mi,html:'<div class="result result--no" style="margin:0 0 12px"><h2 class="ok">Burn the fuel</h2><p>'+why+': '+fmt(over)+' lb ÷ 7 = <b>'+gal+' gal</b> = about <b>'+mi+' miles</b>. Only if <b>all weigh stations on the next ~'+BURN_MI+' miles are closed</b>: the driver checks the GPS.</p></div>'}}
+ if(gross>L.g){var p=burnPlan(gross-L.g,'Gross is over');if(typeof p==='string')return h+p;
+  var D2=D-p.gal*7,r=search(S,D2,T);h+=p.html;
+  if(!r.best)return h+'<div class="result result--yes"><h2 class="bad">Still not legal after burning</h2><p>No slide in range fixes the axles. Ask the driver to check the door sticker for the axle ratings, or go back to the shipper.</p></div>';
+  return h+block('After burning (~'+p.mi+' mi), then',r.best,p.gal)}
+ if(legal(S,D,T))h+='<p class="ok" style="margin-bottom:12px"><b>All axles are already legal.</b> Moves below only add fuel room.</p>';
+ var r=search(S,D,T);
+ if(!r.best){var p2=D>L.d?burnPlan(D-L.d,'The drive axle is over'):null;
+  if(p2&&typeof p2!=='string'){var r2=search(S,D-p2.gal*7,T);if(r2.best)return h+p2.html+block('After burning (~'+p2.mi+' mi)',r2.best,p2.gal)}
+  return h+(typeof p2==='string'?p2:'')+'<div class="result result--yes"><h2 class="bad">No fix by sliding</h2><p>No combination of fifth wheel and tandem moves in range makes every axle legal. Ask the driver to check the sticker on the door for the axle ratings the manufacturer allows; otherwise the load is fixed at the shipper.</p></div>'}
+ h+=block('Best for fuel room',r.best);
+ if(r.fewest&&(r.fewest.fh!==r.best.fh||r.fewest.th!==r.best.th))h+=block('Fewest moves',r.fewest);
  return h}
 ['s','d','t','f','g'].forEach(function(i){$(i).addEventListener('input',function(){$('out').innerHTML=calc()})});
+['nt','nf'].forEach(function(i){$(i).addEventListener('change',function(){$('out').innerHTML=calc()})});
 $('out').innerHTML=calc()})();
 </script>"""
-    return shell("Fix the Weight", "WEIGHTS & LIMITS", "Turn an overweight scale ticket into a fix: how far to slide the tandem and fifth wheel, and how much fuel the truck can carry afterwards.",
-                 body, chips=["12-34-34 LIMITS", "CALCULATOR"], script=script)
+    return shell("Fix the Weight", "WEIGHTS & LIMITS", "Turn an overweight scale ticket into a fix: how far to slide the tandem and fifth wheel, when to burn fuel, and how much fuel the truck can carry afterwards.",
+                 body, chips=["12-34-34 LIMITS", "STEER UP TO 12,400", "CALCULATOR"], script=script)
 
 # ------------------------------------------------------------ FMCSA summary
 TOC_SCRIPT = """<script>
@@ -746,6 +774,9 @@ def main():
     w("email-course.html", render_email_course(SRC / "carrier-dispatch-email-course.html"))
     w("email-answers.html", page_email_answers(SRC / "email-answers.json", SRC / "carrier-dispatch-email-course.html"))
     w("dot-levels.html", page_levels()); w("accident-test.html", page_accident()); w("fix-the-weight.html", page_fix_weight())
+    road = Road(SRC, (ROOT / "ugl-catalog.js").read_text(encoding="utf-8"), shell, TOC_SCRIPT)
+    for name, page in road.pages().items():
+        w(name, page)
     for name in ("sample-rate-confirmation", "cargo-claims-presentation", "cpdp-eligibility-guide", "chain-laws"):
         shutil.copy(SRC / f"{name}.pdf", OUT / "files" / f"{name}.pdf"); print("file ", name + ".pdf")
 

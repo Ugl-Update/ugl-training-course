@@ -189,3 +189,13 @@ a.lcard:hover .lcard__arrow{color:var(--u-red-ink);transform:translateX(3px)}
   .ov{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){.lcard,.lcard__arrow,.progress i,.course{transition:none;animation:none}a.lcard:hover{transform:none}}
+/* The road on the Course tab: stops in order along a line */
+.road{list-style:none;position:relative;display:grid;gap:10px;margin:0;padding:0}
+.road::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:2px;background:repeating-linear-gradient(180deg,rgba(var(--u-red-rgb),.55) 0 10px,transparent 10px 18px)}
+.road__stop{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;align-items:center;position:relative}
+.road__n{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--u-bg);border:2px solid var(--u-red);font:700 14px var(--u-mono);color:var(--u-red-ink);z-index:1}
+.road__stop:has(.lcard.is-done) .road__n{background:var(--u-red);color:#fff}
+.lib-head{margin:64px 0 -14px;padding-top:28px;border-top:1px solid var(--u-line)}
+.lib-head h2{font-weight:800;font-size:30px;letter-spacing:-.02em;color:var(--u-text)}
+.lib-head p{margin-top:6px;font-size:14.5px;line-height:1.5;color:var(--u-text-3);max-width:620px}
+@media(max-width:640px){.road::before{left:17px}.road__stop{grid-template-columns:36px minmax(0,1fr);gap:10px}.road__n{width:36px;height:36px;font-size:12px}}
