@@ -113,6 +113,7 @@
   // Signed out by the server: blocked or deleted by an admin (ugl-auth.js), here or on a lesson page.
   var ENDED = {
     blocked: 'Your access is paused. Contact your trainer.',
+    auto: 'Your access has been blocked. This incident has been forwarded to the admin.',
     ended: 'You have been signed out. Sign in again, or contact your trainer if that does not work.'
   };
   function signedOutByServer(reason) {
@@ -120,7 +121,7 @@
     show(loginErr, ENDED[reason] || ENDED.ended);
   }
   window.uglWatchSession(signedOutByServer);
-  var out = (location.search.match(/[?&]out=(blocked|ended)\b/) || [])[1];
+  var out = (location.search.match(/[?&]out=(blocked|auto|ended)\b/) || [])[1];
   if (out) history.replaceState(null, '', location.pathname + location.hash);
 
   db.auth.getSession().then(function (r) {

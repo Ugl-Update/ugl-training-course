@@ -206,6 +206,7 @@
         else if (e.kind === 'print') t = 'Tried to print';
         else if (e.kind === 'save') t = x.key === 'u' ? 'Tried to view the page source' : 'Tried to save the page';
         else if (e.kind === 'view' && x.noInput === true) { t = 'Page open ' + dur(num(x.secs)) + ' with no mouse, keyboard, touch or scrolling (possible AI agent)'; red = true; }
+        else if (e.kind === 'auto-block') { t = 'Account blocked automatically: ' + String(x.why || x.reason || 'security rule') + ' Unblock restores it.'; red = true; }
         if (t) list.push({ at: e.at, user: e.user_id, red: red, text: t, where: e.module, ua: e.ua, ip: e.ip });
       });
       return list.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
@@ -311,7 +312,7 @@
         var s = by[u.id], lim = d.limits[u.id] || null, open = openUser === u.id, editing = accessUser === u.id;
         // Progress counts only the lessons this person is allowed to open.
         var course = COURSE.filter(function (i) { return allows(lim, i); }), done = course.filter(function (i) { return s.marks[i.id]; }).length;
-        h += '<tr' + (open || editing ? ' class="is-open"' : '') + '><td class="who">' + esc(uname(u.email)) + '<small>' + (u.is_admin ? 'ADMIN' : 'TRAINEE') +
+        h += '<tr' + (open || editing ? ' class="is-open"' : '') + '><td class="who">' + esc(uname(u.email)) + '<small>' + (u.is_admin ? 'ADMIN' : 'TRAINEE') + (u.blocked ? ' · BLOCKED' : '') +
           (u.last_sign_in_at ? ' · SIGNED IN ' + esc(when(u.last_sign_in_at).toUpperCase()) : ' · NEVER SIGNED IN') + '</small></td>' +
           '<td>' + accessPill(lim) + '</td>' +
           '<td>' + (course.length ? '<div class="meter"><i><b style="width:' + Math.round(done / course.length * 100) + '%"></b></i><span>' + done + ' / ' + course.length + '</span></div>' : '<span class="pill">NO LESSONS</span>') + '</td>' +

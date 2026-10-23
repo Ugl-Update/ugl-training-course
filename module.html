@@ -47,12 +47,14 @@
       'no-access': 'THIS IS NOT OPEN TO YOU. ASK YOUR TRAINER IF YOU NEED IT.',
       'too-many-requests': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
       'bulk-download': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
+      'auto-blocked': 'YOUR ACCESS HAS BEEN BLOCKED. THIS INCIDENT HAS BEEN FORWARDED TO THE ADMIN.',
       'not-found': 'NOT FOUND'
     };
-    var token = null, name = 'trainee', sig = null;
+    var token = null, name = 'trainee', sig = null, locked = false;
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
     function fail(msg) {
+      if (locked) return;
       document.getElementById('box').innerHTML =
         '<div class="msg">' + esc(msg) + '</div><a href="index.html">Back to course menu</a>';
     }
@@ -68,27 +70,50 @@
           if (res.ok && j.url) return j;
           var err = new Error(REFUSED[j.reason] || (res.status === 401 ? 'PLEASE SIGN IN AGAIN' : res.status === 403 ? 'ACCESS DENIED' : 'COULD NOT LOAD'));
           err.reason = j.reason;
+          if (j.reason === 'auto-blocked') lockout(j.why);
           throw err;
         });
       });
     }
     // Page reports. While leaving a page only a beacon is reliable, and a beacon cannot carry
-    // headers, so it sends the sign-in token in its (plain text) body instead.
+    // headers, so it sends the sign-in token in its (plain text) body instead. Otherwise the
+    // gateway's answer comes back (copy / print / save: the warning count, or a block).
     function report(kind, detail, leaving) {
-      if (!token) return;
+      if (!token) return null;
       var body = { action: 'event', kind: kind, module: slug, detail: detail || null };
       try {
         if (leaving && navigator.sendBeacon) {
           body.token = token;
-          if (navigator.sendBeacon(FN, new Blob([JSON.stringify(body)], { type: 'text/plain' }))) return;
+          if (navigator.sendBeacon(FN, new Blob([JSON.stringify(body)], { type: 'text/plain' }))) return null;
           delete body.token;
         }
-        fetch(FN, {
+        return fetch(FN, {
           method: 'POST', keepalive: !!leaving,
           headers: { Authorization: 'Bearer ' + token, apikey: cfg.key, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
-        }).catch(function () {});
-      } catch (e) {}
+        }).then(function (res) { return res.json(); }).catch(function () { return null; });
+      } catch (e) { return null; }
+    }
+
+    // Blocked automatically (the gateway decided): the lesson goes, this device is signed out and
+    // the person is told the incident went to the admin.
+    function lockout(why) {
+      if (locked) return;
+      locked = true;
+      try { if (window.caches) caches.delete(CACHE); } catch (e) {}
+      db.auth.signOut({ scope: 'local' }).catch(function () {});
+      document.querySelectorAll('audio, video').forEach(function (m) { try { m.pause(); } catch (e) {} });
+      document.title = 'Access blocked · Unified Service and Consulting';
+      document.body.innerHTML = '';
+      var box = document.createElement('div');
+      box.setAttribute('role', 'alert');
+      box.setAttribute('style', 'position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;' +
+        'text-align:center;background:#141415;color:#f2f2f3;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif');
+      box.innerHTML = '<div style="font:600 12px ui-monospace,Menlo,monospace;letter-spacing:.18em;color:#ff6b61">ACCESS BLOCKED</div>' +
+        '<h1 style="margin:0;max-width:560px;font:700 26px/1.25 system-ui,-apple-system,sans-serif">This incident has been forwarded to the admin.</h1>' +
+        '<p style="margin:0;max-width:520px;color:#c9c9cf">' + esc(why || 'A course security rule was broken.') + ' Your account stays blocked until the admin restores it.</p>' +
+        '<a href="index.html?out=auto" style="color:#ff8a7a;font-size:15px">Back to sign-in</a>';
+      document.body.appendChild(box);
     }
 
     function download(url, size, progress) {
@@ -161,14 +186,15 @@
           });
         });
       }).then(function () { guard.toast('Narration ready', 1600); }, function (e) {
+        if (locked) return;
         guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Narration could not load. Refresh the page to try again.', 6000);
       });
     }
 
     function protect() {
-      guard.install({ name: name, report: report }); readButton();
+      guard.install({ name: name, report: report, onBlocked: lockout }); readButton();
       // Blocked or deleted while reading: leave the lesson for the login screen (ugl-auth.js).
-      window.uglWatchSession(function (reason) { location.replace('index.html?out=' + reason); });
+      window.uglWatchSession(function (reason) { if (!locked) location.replace('index.html?out=' + reason); });
     }
 
     // Course lessons count toward progress only when the trainee marks them as read (lesson_done).
