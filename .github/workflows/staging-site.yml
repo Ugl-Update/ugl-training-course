@@ -1,0 +1,33 @@
+name: Publish the staging site
+
+# Every push to a working branch puts a copy of the site shell (this repo's pages, scripts, styles and
+# assets) into the public "staging-site" bucket of the Supabase project, marked as staging. It is served at
+#   https://fjojwlygbbajfqhdusut.supabase.co/storage/v1/object/public/staging-site/index.html
+# and talks to the staging gateway (content-staging) and the staging content bucket, so admins can check a
+# branch on the real stack before it goes to main. main is never published this way: GitHub Pages does that.
+# No secrets: the upload function trusts this workflow through GitHub's OIDC token (repository + branch).
+on:
+  push:
+    branches: ['claude/**', 'staging/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: staging-site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the staging copy
+        run: python3 .github/staging_site.py build
+      - name: Upload it to the staging-site bucket
+        env:
+          SYNC_URL: https://fjojwlygbbajfqhdusut.supabase.co/functions/v1/course-admin
+        run: python3 .github/staging_site.py upload

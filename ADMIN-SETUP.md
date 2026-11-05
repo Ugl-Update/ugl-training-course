@@ -140,6 +140,16 @@ it shows what people cannot find in the course. The free Groq tier is shared by 
 1,000 questions a day and a few a minute; Groq states it does not train on API data by default. Only
 course text and the question leave the site, never names or load numbers.
 
+## The staging site (checking a branch before main)
+
+A working branch (`claude/...` or `staging/...`) of this repo and of the sources repo is published, on every
+push, as a staging copy at https://fjojwlygbbajfqhdusut.supabase.co/storage/v1/object/public/staging-site/index.html
+(header says STAGING). It uses the real sign-in, database and admin page, but reads its lessons from the
+`course-staging` bucket through the `content-staging` function, so nothing on it reaches the live site or
+the trainees; only admins can open lessons there. Merging to main is still what goes live (see
+launch/README.md in the sources repo). To republish by hand, run "Publish the staging site" in this repo's
+Actions tab or "Sync course files to Supabase" in the sources repo's.
+
 ## Public repo warning
 
 This repo is public and only holds the site itself (login, portal, styles, tools). Never commit course content here: decks, documents, built pages and their photos belong in the private `ugl-training-sources` repo. The site was moved to this fresh repository so that its history holds none of them; the old repository with that history, `ugl-training-course-old`, is private.

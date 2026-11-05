@@ -19,8 +19,14 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const BUCKET = "course";
-const ORIGINS = ["https://ugl-update.github.io"];
+// One source, two deployments: "ask" answers the live site from the "course" bucket's index; "ask-staging"
+// answers the staging site (see launch/README.md) from "course-staging". Which one runs is read from the URL.
+const STAGES = {
+  live: { bucket: "course", origins: ["https://ugl-update.github.io"] },
+  staging: { bucket: "course-staging", origins: ["https://fjojwlygbbajfqhdusut.supabase.co", "https://ugl-update.github.io"] },
+};
+type Stage = keyof typeof STAGES;
+const stageOf = (req: Request): Stage => /\/ask-staging(?:\/|$)/.test(new URL(req.url).pathname) ? "staging" : "live";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = Deno.env.get("ASK_MODEL") || "openai/gpt-oss-120b";
 const DAILY = Math.max(1, Number(Deno.env.get("ASK_DAILY") || 40));
@@ -36,21 +42,24 @@ const SYSTEM = [
 ].join(" ");
 
 type Passage = { id: string; t: string; u: string; x: string };
-let index: { at: number; byId: Map<string, Passage> } | null = null;
-async function loadIndex(): Promise<Map<string, Passage> | null> {
+const indexes: Partial<Record<Stage, { at: number; byId: Map<string, Passage> }>> = {};
+async function loadIndex(stage: Stage): Promise<Map<string, Passage> | null> {
+  const index = indexes[stage];
   if (index && Date.now() - index.at < 600_000) return index.byId;
-  const { data, error } = await db.storage.from(BUCKET).download("ask/index.json");
+  const { data, error } = await db.storage.from(STAGES[stage].bucket).download("ask/index.json");
   if (error || !data) return index?.byId ?? null;
   try {
     const parsed = JSON.parse(await data.text()) as { passages: Passage[] };
-    index = { at: Date.now(), byId: new Map(parsed.passages.map((p) => [p.id, p])) };
-    return index.byId;
+    const byId = new Map(parsed.passages.map((p) => [p.id, p]));
+    indexes[stage] = { at: Date.now(), byId };
+    return byId;
   } catch {
     return index?.byId ?? null;
   }
 }
 
-function cors(origin: string | null) {
+function cors(origin: string | null, stage: Stage) {
+  const ORIGINS = STAGES[stage].origins;
   return {
     "Access-Control-Allow-Origin": origin && ORIGINS.includes(origin) ? origin : ORIGINS[0],
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -65,12 +74,12 @@ async function log(row: Record<string, unknown>) {
 }
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get("origin");
+  const origin = req.headers.get("origin"), stage = stageOf(req);
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { ...cors(origin), "Content-Type": "application/json" } });
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
+    new Response(JSON.stringify(body), { status, headers: { ...cors(origin, stage), "Content-Type": "application/json" } });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin, stage) });
   if (req.method !== "POST") return json({ error: "method" }, 405);
-  if (!origin || !ORIGINS.includes(origin)) return json({ error: "origin" }, 403);
+  if (!origin || !STAGES[stage].origins.includes(origin)) return json({ error: "origin" }, 403);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "bad-request" }, 400); }
@@ -94,7 +103,7 @@ Deno.serve(async (req) => {
 
   const key = Deno.env.get("GROQ_API_KEY");
   if (!key) return json({ error: "not-configured" }, 503);
-  const byId = await loadIndex();
+  const byId = await loadIndex(stage);
   if (!byId) return json({ error: "no-index" }, 503);
   const passages = ids.map((id) => byId.get(id)).filter((p): p is Passage => !!p);
   if (!passages.length) return json({ error: "no-passages" }, 400);

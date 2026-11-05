@@ -106,7 +106,7 @@
 
   // Signing out also clears the lessons kept on this device for fast reopening (module.html).
   $('ugl-lock-btn').addEventListener('click', function () {
-    try { if (window.caches) caches.delete('ugl-content-v1'); } catch (e) {}
+    window.uglClearCaches();
     db.auth.signOut().then(showLogin);
   });
 

@@ -37,7 +37,7 @@
   <script>
   (function () {
     var cfg = window.UGL_CONFIG, db = window.uglDb, guard = window.uglGuard;
-    var FN = cfg.url + '/functions/v1/content', CACHE = 'ugl-content-v1';
+    var FN = window.uglFn('content'), CACHE = window.uglCacheName;
     var slug = new URLSearchParams(location.search).get('m');
     var item = window.UGL_CATALOG.items.filter(function (i) { return i.id === slug && !i.hidden && /\.(html|pdf)$/.test(i.path || ''); })[0];
     var file = item ? item.path : null;
@@ -51,6 +51,7 @@
       'too-many-requests': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
       'bulk-download': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
       'auto-blocked': 'YOUR ACCESS HAS BEEN BLOCKED. THIS INCIDENT HAS BEEN FORWARDED TO THE ADMIN.',
+      'staging-admins-only': 'THIS IS THE STAGING SITE, FOR ADMINS ONLY. OPEN THE LIVE SITE INSTEAD.',
       'not-found': 'NOT FOUND'
     };
     var token = null, name = 'trainee', sig = null, locked = false;
@@ -231,6 +232,7 @@
 
     function protect() {
       guard.install({ name: name, report: report, onBlocked: lockout }); readButton();
+      window.uglStageBadge(document);
       window.uglReport = report;  // road stops report finished drill sets through the same channel
       // Blocked or deleted while reading: leave the lesson for the login screen (ugl-auth.js).
       window.uglWatchSession(function (reason) { if (!locked) location.replace('index.html?out=' + reason); });

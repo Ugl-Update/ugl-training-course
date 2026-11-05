@@ -23,8 +23,19 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const BUCKET = "course";
-const ORIGINS = ["https://ugl-update.github.io"];
+// One source, two deployments. "content" serves the live site from the "course" bucket. "content-staging"
+// serves the staging site (a branch, for admins only, see launch/README.md) from "course-staging", with
+// the staging site's own catalog. Which one is running is read from the function's own URL.
+const STAGES = {
+  live: { bucket: "course", site: "https://ugl-update.github.io/ugl-training-course/", origins: ["https://ugl-update.github.io"] },
+  // The staging shell is served from the public "staging-site" bucket of this project (see launch/README.md).
+  staging: {
+    bucket: "course-staging", site: "https://fjojwlygbbajfqhdusut.supabase.co/storage/v1/object/public/staging-site/",
+    origins: ["https://fjojwlygbbajfqhdusut.supabase.co", "https://ugl-update.github.io"],
+  },
+};
+type Stage = keyof typeof STAGES;
+const stageOf = (req: Request): Stage => /\/content-staging(?:\/|$)/.test(new URL(req.url).pathname) ? "staging" : "live";
 
 // Never a trainee's browser: crawlers, AI fetchers, HTTP libraries, automation and headless browsers.
 const BLOCK_UA =
@@ -108,13 +119,13 @@ const SIGNAL_KEYS = ["ua", "wd", "headless", "langs", "plat", "tz", "scr", "touc
 
 // The site's catalog (ugl-catalog.js) says which file belongs to which item and whether it is a lesson
 // or a tool. Read from the live site, one item per line, and kept for 5 minutes.
-const CATALOG_URL = "https://ugl-update.github.io/ugl-training-course/ugl-catalog.js";
 type Item = { id: string; section: string; path: string };
-let catalog: { at: number; items: Map<string, Item> } | null = null;
-async function loadCatalog(): Promise<Map<string, Item> | null> {
+const catalogs: Partial<Record<Stage, { at: number; items: Map<string, Item> }>> = {};
+async function loadCatalog(stage: Stage): Promise<Map<string, Item> | null> {
+  const catalog = catalogs[stage];
   if (catalog && Date.now() - catalog.at < 300_000) return catalog.items;
   try {
-    const res = await fetch(CATALOG_URL, { headers: { "Cache-Control": "no-cache" } });
+    const res = await fetch(STAGES[stage].site + "ugl-catalog.js", { headers: { "Cache-Control": "no-cache" } });
     if (!res.ok) return catalog?.items ?? null;
     const items = new Map<string, Item>();
     for (const line of (await res.text()).split("\n")) {
@@ -122,7 +133,7 @@ async function loadCatalog(): Promise<Map<string, Item> | null> {
       if (m && !/hidden:\s*true/.test(line)) items.set(m[1], { id: m[1], section: m[2], path: m[3] });
     }
     if (items.size < 5) return catalog?.items ?? null;
-    catalog = { at: Date.now(), items };
+    catalogs[stage] = { at: Date.now(), items };
     return items;
   } catch {
     return catalog?.items ?? null;
@@ -130,8 +141,8 @@ async function loadCatalog(): Promise<Map<string, Item> | null> {
 }
 
 // null = allowed; otherwise the refusal reason. Only called for people who have a limit.
-async function accessProblem(limit: { mode: string; items: string[] }, module: string, path: string, part: string) {
-  const items = await loadCatalog();
+async function accessProblem(stage: Stage, limit: { mode: string; items: string[] }, module: string, path: string, part: string) {
+  const items = await loadCatalog(stage);
   if (!items) return "no-access";
   const it = items.get(module);
   if (!it) return "no-access";
@@ -142,7 +153,8 @@ async function accessProblem(limit: { mode: string; items: string[] }, module: s
   return (limit.items || []).includes(it.id) ? null : "no-access";
 }
 
-function cors(origin: string | null) {
+function cors(origin: string | null, stage: Stage) {
+  const ORIGINS = STAGES[stage].origins;
   return {
     "Access-Control-Allow-Origin": origin && ORIGINS.includes(origin) ? origin : ORIGINS[0],
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -153,10 +165,10 @@ function cors(origin: string | null) {
 }
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get("origin");
+  const origin = req.headers.get("origin"), stage = stageOf(req);
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { ...cors(origin), "Content-Type": "application/json" } });
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
+    new Response(JSON.stringify(body), { status, headers: { ...cors(origin, stage), "Content-Type": "application/json" } });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin, stage) });
   if (req.method !== "POST") return json({ error: "method" }, 405);
 
   let body: Record<string, any>;
@@ -172,6 +184,8 @@ Deno.serve(async (req) => {
   if (authErr || !user) return json({ error: "signin" }, 401);
   const ua = (req.headers.get("user-agent") || "").slice(0, 400);
   const ip = (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim();
+  // The staging site is where the team checks a branch before it goes live: admins only.
+  if (stage === "staging" && !(await isAdmin(user.id))) return json({ error: "blocked", reason: "staging-admins-only" }, 403);
 
   if (body.action === "event") {
     const kind = String(body.kind || "");
@@ -200,7 +214,7 @@ Deno.serve(async (req) => {
   const s = body.signals && typeof body.signals === "object" ? body.signals : null;
   let block: string | null = null;
   const flags: string[] = [];
-  if (!origin || !ORIGINS.includes(origin)) block = "not-the-course-site";
+  if (!origin || !STAGES[stage].origins.includes(origin)) block = "not-the-course-site";
   else if (!s) block = "not-a-browser";
   else if (BLOCK_UA.test(ua) || BLOCK_UA.test(String(s.ua || ""))) block = "bot-or-script";
   else if (s.wd === true || s.headless === true) block = "automated-browser";
@@ -209,8 +223,9 @@ Deno.serve(async (req) => {
     // If the limit cannot be read, refuse rather than treat the person as unlimited.
     const { data: limit, error: limitErr } = await db.from("user_access").select("mode,items").eq("user_id", user.id).maybeSingle();
     if (limitErr) return json({ error: "server" }, 500);
-    if (limit) block = await accessProblem(limit, String(body.module || ""), path, part);
+    if (limit) block = await accessProblem(stage, limit, String(body.module || ""), path, part);
   }
+  if (stage === "staging") flags.push("staging");
   if (s) {
     if (s.ua && s.ua !== ua) flags.push("user-agent-mismatch");
     if (s.langs === 0) flags.push("headless-hints");
@@ -239,7 +254,7 @@ Deno.serve(async (req) => {
     return json({ error: "blocked", reason }, reason === "not-found" ? 404 : 403);
   }
 
-  const { data: signed, error: signErr } = await db.storage.from(BUCKET).createSignedUrl(path, 60);
+  const { data: signed, error: signErr } = await db.storage.from(STAGES[stage].bucket).createSignedUrl(path, 60);
   if (signErr || !signed) return json({ error: "server" }, 500);
   return json({ url: signed.signedUrl, etag: verdict.etag, size: verdict.size, flags: verdict.flags });
 });

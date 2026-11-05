@@ -43,6 +43,8 @@ body.ugl-unlocked .course{display:block}
 .topbar__mark{width:34px;height:34px;object-fit:contain;flex-shrink:0}
 .topbar__title{font-weight:800;font-size:15px;letter-spacing:.04em;color:var(--u-text)}
 .topbar__sub{font-family:var(--u-mono);font-size:10px;letter-spacing:.16em;color:var(--u-faint);margin-left:8px}
+/* The staging copy of the site says so in every header, so nobody mistakes it for the live course */
+.stage-badge{display:inline-block;margin-left:10px;padding:3px 8px;border-radius:6px;background:var(--u-amber);color:#1a1200;font:700 10px var(--u-mono);letter-spacing:.14em;vertical-align:middle}
 .topbar__right{display:flex;align-items:center;gap:16px}
 .topbar__tag{font-family:var(--u-mono);font-size:11px;letter-spacing:.08em;color:var(--u-muted)}
 .admin-link{font-family:var(--u-mono);font-size:10.5px;letter-spacing:.12em;color:var(--u-red-ink);text-decoration:none;border:1px solid rgba(var(--u-red-rgb),.45);border-radius:8px;padding:7px 12px;white-space:nowrap;transition:background .15s}

@@ -360,7 +360,7 @@
         keep[it.path] = 1;
         ['audio', 'media'].forEach(function (p) { keep[p + '/' + it.path.replace(/\.html$/, '.pack')] = 1; });
       });
-      caches.open('ugl-content-v1').then(function (c) {
+      caches.open(window.uglCacheName || 'ugl-content-v1').then(function (c) {
         return c.keys().then(function (ks) {
           ks.forEach(function (k) {
             var m = k.url.match(/\/__ugl-cache\/([^?]*)\?/);

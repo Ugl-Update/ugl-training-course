@@ -5,6 +5,23 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
+  // Staging: the copy of the site deployed from a branch carries stage: 'staging' in its config (set by
+  // its deploy workflow). It talks to the staging gateway and helper and keeps its own page cache; sign-in,
+  // progress and the admin tools are the same as on the live site.
+  var STAGE = window.UGL_STAGE = cfg.stage === 'staging' ? 'staging' : 'live', STAGED = { content: 1, ask: 1 };
+  window.uglFn = function (name) { return cfg.url + '/functions/v1/' + name + (STAGE === 'staging' && STAGED[name] ? '-staging' : ''); };
+  window.uglCacheName = STAGE === 'staging' ? 'ugl-content-staging' : 'ugl-content-v1';
+  window.uglClearCaches = function () { try { if (window.caches) { caches.delete('ugl-content-v1'); caches.delete('ugl-content-staging'); } } catch (e) {} };
+  window.uglStageBadge = function (doc) {
+    if (STAGE !== 'staging') return;
+    var d = doc || document, host = d.querySelector('.topbar__brand') || d.querySelector('.ugl-gate__badge');
+    if (!host || host.querySelector('.stage-badge')) return;
+    var b = d.createElement('span'); b.className = 'stage-badge'; b.textContent = 'STAGING';
+    b.title = 'The test copy of the site, built from a branch. Trainees do not see this.';
+    host.appendChild(b);
+  };
+  document.addEventListener('DOMContentLoaded', function () { window.uglStageBadge(); });
+
   // An admin can block or delete an account at any time. Ask the sign-in server now, every 30
   // seconds and whenever the tab comes back into view, so the person is signed out within moments
   // instead of when their sign-in runs out. onEnded('blocked') when the account is blocked (the
@@ -14,7 +31,7 @@
     var busy = false, over = false;
     function end(reason) {
       over = true;
-      try { if (window.caches) caches.delete('ugl-content-v1'); } catch (e) {}
+      window.uglClearCaches();
       // Only this device: the server refuses every request from a blocked or deleted account anyway.
       db.auth.signOut({ scope: 'local' }).catch(function () {}).then(function () { over = false; onEnded(reason); });
     }

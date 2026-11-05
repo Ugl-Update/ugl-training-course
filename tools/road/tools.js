@@ -314,7 +314,7 @@ window.UGLRoad = (function () {
       var btn = $('ask-ai'); btn.disabled = true; ans.innerHTML = '<div class="ask__ans"><p class="ask__wait">Thinking…</p></div>';
       window.uglDb.auth.getSession().then(function (r) {
         var tok = r.data && r.data.session && r.data.session.access_token;
-        return fetch(window.UGL_CONFIG.url + '/functions/v1/ask', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, apikey: window.UGL_CONFIG.key, 'Content-Type': 'application/json' },
+        return fetch(window.uglFn ? window.uglFn('ask') : window.UGL_CONFIG.url + '/functions/v1/ask', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, apikey: window.UGL_CONFIG.key, 'Content-Type': 'application/json' },
           body: JSON.stringify({ question: q, passages: last.map(function (x) { return x.p.id; }) }) }).then(function (res) { return res.json().then(function (j) { j._status = res.status; return j; }); });
       }).then(function (j) {
         btn.disabled = false;
