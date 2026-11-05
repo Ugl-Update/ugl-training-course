@@ -32,7 +32,6 @@
 .toc a.toc__sub{padding:4px 0 4px 24px;font-size:12.5px;color:var(--u-faint)}.toc a.toc__sub.is-on{color:var(--u-text)}
 .sec{margin-bottom:46px;scroll-margin-top:90px}
 .sec>h2{display:flex;align-items:center;gap:12px;font-weight:700;font-size:22px;letter-spacing:-.01em;color:var(--u-text);margin-bottom:12px}
-.sec>h2 .part{display:none}
 .sec .part__lead{font-size:14.5px;color:var(--u-muted);margin:-4px 0 18px}
 .sec p{font-size:16px;line-height:1.62;color:var(--u-text-2);margin-bottom:12px}
 .sec>p,.sec>ol.numlist,.sec>ul.plain{max-width:66ch}
@@ -407,6 +406,7 @@ img.ph-img[src*="#k="]{filter:blur(10px);transform:scale(1.04);cursor:progress}
 .cloze__text{font:14px/2 var(--u-mono);color:var(--u-text-2);background:var(--u-inset);border-radius:var(--u-r-ctl);padding:12px 14px;margin-bottom:10px;overflow-wrap:anywhere}
 input.cloze{display:inline-block;margin:0 2px;padding:3px 8px;border:1px solid var(--u-line-2);border-bottom-color:var(--u-live);border-radius:var(--u-r-chip);background:var(--u-surface);color:var(--u-text);font:600 14px var(--u-mono);min-width:3ch;outline:none;vertical-align:baseline}
 input.cloze:focus{box-shadow:0 0 0 3px rgba(var(--u-live-rgb),.25)}
+input.cloze::placeholder{color:var(--u-muted);font-weight:400}
 input.cloze.is-ok{border-color:var(--u-green);background:rgba(var(--u-green-rgb),.12)}input.cloze.is-bad{border-color:var(--u-neg);background:rgba(var(--u-neg-rgb),.12)}
 .spot{display:grid;gap:6px}
 .spot__line{display:block;width:100%;padding:10px 14px;border:1px solid var(--u-line-2);border-radius:var(--u-r-ctl);background:var(--u-inset);color:var(--u-text-2);font:14px/1.5 var(--u-mono);text-align:left;cursor:pointer}
@@ -442,7 +442,7 @@ input.cloze.is-ok{border-color:var(--u-green);background:rgba(var(--u-green-rgb)
 .mb__recent{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 18px}
 .mb__recent small{font-size:12.5px;color:var(--u-muted);margin-right:4px}
 .mb__rbtn{padding:7px 11px;border:1px solid var(--u-line-2);border-radius:var(--u-r-ctl);background:var(--u-surface);color:var(--u-text);font:600 13px var(--u-font);cursor:pointer}
-.mbg{margin-bottom:34px;scroll-margin-top:150px}
+.mbg{margin-bottom:34px;scroll-margin-top:200px}
 .mbg__h{display:flex;align-items:baseline;gap:10px;font-size:19px;font-weight:700;color:var(--u-text);margin:0 0 10px;padding-top:14px;border-top:1px solid var(--u-line)}
 .mbg__h small{font-size:12.5px;color:var(--u-muted);font-weight:500}
 .chipsel{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}

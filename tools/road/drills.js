@@ -32,7 +32,7 @@ window.UGLRoadDrills = function () {
       t.style.top = bar.offsetHeight + 'px';
       parts.forEach(function (h) { var r = h.getBoundingClientRect(); if (r.height && r.top <= 200) cur = h.textContent.replace(/^\d+\s*/, ''); });
       fill.style.width = pct + '%';
-      label.textContent = (mile ? 'STOP ' + mile.textContent + ' · ' : '') + (cur ? cur.toUpperCase() + ' · ' : '') + pct + '%';
+      label.textContent = (mile ? 'Stop ' + mile.textContent + ' · ' : '') + (cur ? cur + ' · ' : '') + pct + '%';
     }
     window.addEventListener('scroll', tick, { passive: true }); window.addEventListener('resize', tick);
     window.__uglTripOff = function () { window.removeEventListener('scroll', tick); window.removeEventListener('resize', tick); };
@@ -55,7 +55,7 @@ window.UGLRoadDrills = function () {
   });
 
   // ---- drills
-  var cards = [].slice.call(page.querySelectorAll('.drill')), first = {}, solved = {}, posted = false;
+  var cards = [].slice.call(page.querySelectorAll('.drill')), first = {}, solved = {}, posted = false, told = false;
   var orig = cards.map(function (c) { return c.innerHTML; });
   var scoreEl = document.getElementById('drill-score');
   window.UGL_DRILLS = { n: cards.length, done: function () { return Object.keys(solved).length; } };
@@ -70,6 +70,11 @@ window.UGLRoadDrills = function () {
         posted = true;
         var missed = cards.map(function (c, i) { return first[i] ? null : i + 1; }).filter(Boolean);
         window.uglReport('drill', { stop: ID, right: right, n: n, missed: missed });
+      }
+      // The page that hosts the stop (module.html) marks it as read once the set is finished: told once per set.
+      if (!told && typeof window.uglDrillsDone === 'function') {
+        told = true;
+        try { window.uglDrillsDone({ stop: ID, right: right, n: n }); } catch (e) {}
       }
       scoreEl.innerHTML = '<b>All done: ' + right + ' of ' + n + ' right on the first try.</b>' + (right === n ? ' Perfect.' : ' Read the ones you missed once more.') +
         ' <button type="button" class="btn btn--ghost" id="drill-again">Try them again</button>';
@@ -130,6 +135,31 @@ window.UGLRoadDrills = function () {
     } else if (d.type === 'cloze') {
       // The team's message with a few blanks: each one must match one of the accepted answers.
       var inputs = [].slice.call(card.querySelectorAll('input.cloze'));
+      // Each blank says what shape of answer goes in it, read off the accepted answers.
+      function shape(acc) {
+        var a = acc[0] || '';
+        if (/:|\b[ap]\.?m\b/i.test(a)) return 'time';
+        if (/\d/.test(a)) return 'number';
+        if (/^[A-Z][A-Za-z.'-]+(?: [A-Z][A-Za-z.'-]+)*, [A-Z]{2}$/.test(a)) return 'city';
+        return 'word';
+      }
+      inputs.forEach(function (inp, k) {
+        if (!d.blanks[k] || inp.placeholder) return;
+        var hint = shape(d.blanks[k]);
+        inp.placeholder = hint;
+        if (inp.size < hint.length) inp.size = hint.length;  // the hint must show whole in a short blank
+      });
+      // The model sentence: the template with the first accepted answer in every blank.
+      function model() {
+        var out = '', box = card.querySelector('.cloze__text');
+        [].forEach.call(box ? box.childNodes : [], function (n) {
+          if (n.nodeType === 3) out += n.textContent;
+          else if (n.nodeName === 'BR') out += '\n';
+          else if (n.nodeName === 'INPUT') out += (d.blanks[+n.getAttribute('data-k')] || [''])[0];
+          else out += n.textContent;
+        });
+        return out;
+      }
       function checkCloze() {
         var wrong = 0;
         inputs.forEach(function (inp, k) {
@@ -137,8 +167,11 @@ window.UGLRoadDrills = function () {
           inp.classList.toggle('is-ok', ok); inp.classList.toggle('is-bad', !ok); if (!ok) wrong++;
         });
         if (!wrong) { lock(card); fb(card, true, '<b>Right.</b> ' + (d.why || 'That is the message, with the right numbers.')); }
-        else fb(card, false, '<b>' + wrong + ' blank' + (wrong > 1 ? 's are' : ' is') + ' not right.</b> Read the situation again and fix the red ones.' +
-          (++tries >= 2 ? ' <i>Expected: ' + d.blanks.map(function (b) { return esc(b[0]); }).join(' · ') + '</i>' : ''));
+        else {
+          tries++;
+          fb(card, false, '<b>' + wrong + ' blank' + (wrong > 1 ? 's are' : ' is') + ' not right.</b> Read the situation again and fix the red ones.' +
+            '<div class="drill__model"><small>The team\'s version</small><pre>' + esc(model()) + '</pre></div>');
+        }
         result(i, !wrong);
       }
       card.querySelector('.drill__check').addEventListener('click', checkCloze);
@@ -184,14 +217,14 @@ window.UGLRoadDrills = function () {
         var rows = d.need.map(function (r) { var got = miss.indexOf(r) < 0; return '<li class="' + (got ? 'ok' : 'bad') + '">' + (got ? '✓ ' : '✗ ') + esc(r[1]) + '</li>'; })
           .concat(bad.map(function (r) { return '<li class="bad">✗ ' + esc(r[1]) + '</li>'; }));
         fb(card, ok, (ok ? '<b>Good message.</b> Everything the team checks for is there.' : '<b>Almost.</b> Fix the red lines and check again. Use the team\'s wording.') +
-          '<ul class="drill__rules">' + rows.join('') + '</ul><div class="drill__model"><small>THE TEAM\'S VERSION</small><pre>' + esc(d.model) + '</pre></div>');
+          '<ul class="drill__rules">' + rows.join('') + '</ul><div class="drill__model"><small>The team\'s version</small><pre>' + esc(d.model) + '</pre></div>');
         if (ok) lock(card);
         result(i, ok);
       });
     }
   }
   function reset() {
-    first = {}; solved = {}; posted = false;
+    first = {}; solved = {}; posted = false; told = false;
     cards.forEach(function (c, i) { c.innerHTML = orig[i]; bind(c, i); });
     score();
     page.scrollIntoView({ behavior: 'smooth' });

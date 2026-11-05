@@ -25,9 +25,12 @@
   var CSS =
     '.ugl-wm{position:fixed;inset:0;pointer-events:none;z-index:2147483600;background-repeat:repeat}' +
     '.ugl-ai-note{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}' +
-    '.ugl-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483646;max-width:calc(100vw - 32px);background:#1c1c1e;color:#f2f2f3;' +
-    'font:500 13.5px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:10px 16px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transition:opacity .2s;pointer-events:none}' +
+    // The toast floats, so it is the one thing here that may carry a shadow; it reads the site tokens
+    // where the page has them (lessons load ugl-site.css) and falls back to the dark palette.
+    '.ugl-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483646;max-width:calc(100vw - 32px);background:var(--u-surface-2,#1c191f);color:var(--u-text,#fff);' +
+    'border:1px solid var(--u-line-2,rgba(255,255,255,.16));font:500 13.5px/1.4 var(--u-font,system-ui,-apple-system,"Segoe UI",sans-serif);padding:10px 16px;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transition:opacity .2s;pointer-events:none}' +
     '.ugl-toast.is-on{opacity:1}' +
+    '@media(prefers-reduced-motion:reduce){.ugl-toast{transition:none}}' +
     '.ugl-print{display:none}' +
     '@media print{body>*:not(.ugl-print){display:none!important}.ugl-print{display:block!important;font:600 18px system-ui,sans-serif;padding:40px;color:#000}}' +
     'img{-webkit-user-drag:none}';

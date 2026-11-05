@@ -41,8 +41,8 @@ def shell(title, eyebrow, lead, body, chips=(), script="", toc=None, wide=False,
 <link rel="stylesheet" href="ugl-site.css"><link rel="stylesheet" href="ugl-page.css">
 </head><body class="ugl-unlocked"><div class="app-shell">
 <header class="topbar"><div class="topbar__brand"><img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">
-<div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ ACADEMY</span></div></div>
-<div class="topbar__right"><a class="back" href="index.html">← ACADEMY</a></div></header>
+<div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ Academy</span></div></div>
+<div class="topbar__right"><a class="back" href="index.html">← Academy</a></div></header>
 <main class="page{" page--wide" if wide else ""}"><section class="page-hero"><div class="eyebrow"><i></i>{esc(eyebrow)}</div><h1>{esc(title)}</h1>
 <p class="lead">{lead}</p><div class="chips">{chip_html}</div></section>
 {body}</main></div>{script}</body></html>

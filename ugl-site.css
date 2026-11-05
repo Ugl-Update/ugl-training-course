@@ -157,6 +157,16 @@ a.lcard:focus-visible{outline:2px solid var(--u-live);outline-offset:2px}
 .lcard.is-soon{border:1px dashed var(--u-line-2);background:transparent}
 .lcard.is-soon .lcard__state{color:var(--u-amber)}
 
+/* Next up: the first unread stop of the road, the one amethyst field on the portal */
+.nextup{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;gap:2px 20px;align-items:center;margin-bottom:34px;padding:18px 22px;background:var(--u-acc);border-radius:var(--u-r-card);color:#fff}
+.nextup__k{font-size:13px;opacity:.85}
+.nextup__title{font-size:19px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.nextup__line{font-size:14px;line-height:1.5;opacity:.9;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nextup__go{grid-column:2;grid-row:1/4;align-self:center;white-space:nowrap}
+.nextup a.nextup__go{background:#fff;color:#1b0633}
+@media(max-width:640px){.nextup{grid-template-columns:1fr;padding:16px 18px;margin-bottom:26px}.nextup__go{grid-column:1;grid-row:auto;justify-self:start;margin-top:10px}}
+.lib-head{scroll-margin-top:72px}
+
 /* ---- course tracks ---- */
 .track{margin-top:44px}
 .track__head{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:18px;align-items:end;margin-bottom:16px}

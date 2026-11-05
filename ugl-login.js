@@ -29,16 +29,20 @@
   function show(el, msg) { el.textContent = msg; el.style.display = 'block'; }
   function hide(el) { el.style.display = 'none'; }
 
+  // The gate fades out, then is hidden; a sign-out that lands during the fade cancels the hide.
+  var hideGate;
   function showCourse(user) {
-    userLabel.textContent = toDisplayName(user.email) || 'INTERNAL MODULES';
+    userLabel.textContent = toDisplayName(user.email) || 'Internal modules';
     if (window.uglOnSignedIn) window.uglOnSignedIn(user);
     document.body.classList.remove('ugl-locked');
     document.body.classList.add('ugl-unlocked');
     gate.classList.add('is-leaving');
-    setTimeout(function () { gate.style.display = 'none'; }, 340);
+    clearTimeout(hideGate);
+    hideGate = setTimeout(function () { gate.style.display = 'none'; }, 340);
   }
 
   function showLogin() {
+    clearTimeout(hideGate);
     document.body.classList.remove('ugl-unlocked');
     document.body.classList.add('ugl-locked');
     if (window.uglOnSignedOut) window.uglOnSignedOut();

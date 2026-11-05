@@ -7,7 +7,8 @@
 OUT_DIR/index.html is the whole portal plus every native page, running on browser
 storage instead of Supabase (no login). PDFs are rendered to page images in OUT_DIR/pdf/
 so they can be viewed inside the preview. The large narrated decks are not bundled.
-Needs poppler's pdftoppm.
+The course helper (ugl-assist.js) is inlined with the Ask index, so it answers from the
+course text only (the AI helper needs the live site). Needs poppler's pdftoppm.
 """
 import base64, json, os, pathlib, re, subprocess, sys
 from road import js_data
@@ -15,6 +16,7 @@ from road import js_data
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = pathlib.Path(os.environ.get("UGL_SOURCES", ROOT.parent / "ugl-training-sources"))  # private content repo
 PAGES = DATA / "upload-to-supabase" / "pages"
+ASK_INDEX = DATA / "upload-to-supabase" / "ask" / "index.json"  # the Ask tool's search index (built by build_content.py)
 SRC = DATA / "sources"
 
 # Catalog ids of PDFs that are rendered into the preview, and their source file.
@@ -72,6 +74,7 @@ def main():
     catalog = (ROOT / "ugl-catalog.js").read_text(encoding="utf-8")
     portal = (ROOT / "ugl-portal.js").read_text(encoding="utf-8")
     theme = (ROOT / "ugl-theme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "ugl-road.js").read_text(encoding="utf-8")
+    assist, ask = assist_parts()
 
     # Page id in pages/ -> catalog id: pages/<x>.html is catalog item whose path ends with it.
     mounts = []
@@ -82,45 +85,69 @@ def main():
 
     doc = PREVIEW.replace("/*CSS*/", css).replace("/*CATALOG*/", catalog).replace("/*THEME*/", theme).replace("/*PORTAL*/", portal) \
         .replace("/*LOGO*/", "data:image/png;base64," + base64.b64encode((ROOT / "assets" / "unified-logo-icon.png").read_bytes()).decode()) \
-        .replace("/*MOUNTS*/", mounts_js).replace("/*PDFS*/", json.dumps(pdf_pages)).replace("/*WITHHELD*/", json.dumps(WITHHELD))
+        .replace("/*MOUNTS*/", mounts_js).replace("/*PDFS*/", json.dumps(pdf_pages)).replace("/*WITHHELD*/", json.dumps(WITHHELD)) \
+        .replace("/*ASK*/", ask).replace("/*ASSIST*/", assist)
     (out / "index.html").write_text(doc, encoding="utf-8")
-    print("preview:", out / "index.html", f"{len(doc)//1024} KB;", "pdf pages:", pdf_pages, "; photos:", photos)
+    print("preview:", out / "index.html", f"{len(doc)//1024} KB;", "pdf pages:", pdf_pages, "; photos:", photos,
+          "; helper:", "on" if assist else "missing (ugl-assist.js)", "; ask index:", f"{len(ask)//1024} KB" if ask else "missing")
 
 
-PREVIEW = r"""<title>UGL Training Course</title>
+def assist_parts():
+    """The course helper and its search index, inlined so the panel works offline (search only).
+
+    Both are read at build time and skipped when missing: ugl-assist.js may not exist yet, and the Ask
+    index exists only after a content build."""
+    assist = ask = ""
+    f = ROOT / "ugl-assist.js"
+    if f.exists():
+        assist = f.read_text(encoding="utf-8")
+    if ASK_INDEX.exists():
+        ask = "window.UGL_ASK_INDEX=" + js_data(json.loads(ASK_INDEX.read_text(encoding="utf-8"))) + ";"
+    return assist, ask
+
+
+PREVIEW = r"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>UGL Training Course</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /*CSS*/
-/* ---- preview only ---- */
-.pv-bar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:var(--u-acc-deep);border-bottom:1px solid rgba(var(--u-acc-rgb),.5);
-  font:500 10.5px var(--u-mono);letter-spacing:.12em;color:var(--u-text-2);text-align:center}
-.pv-bar button{all:unset;cursor:pointer;color:#fff;text-decoration:underline;text-underline-offset:3px}
-.pv-bar button:focus-visible{outline:2px solid var(--u-acc-ink)}
+/* ---- preview only: a status strip and the lesson bar, in the site's own tokens (text face, sentence case, no shadow) ---- */
+.pv-bar{display:flex;align-items:center;justify-content:center;gap:4px 16px;flex-wrap:wrap;padding:8px 16px;background:var(--u-surface-2);border-bottom:1px solid var(--u-line);
+  font:500 12.5px/1.4 var(--u-font);color:var(--u-muted);text-align:center}
+.pv-bar button{all:unset;cursor:pointer;color:var(--u-text-2);text-decoration:underline;text-underline-offset:3px;border-radius:var(--u-r-chip)}
+.pv-bar button:hover{color:var(--u-text)}
+.pv-bar button:focus-visible{outline:2px solid var(--u-live);outline-offset:2px}
 .lesson-bar{max-width:1240px;margin:0 auto;padding:22px 34px 0;display:flex;align-items:center;gap:14px}
 .lesson-bar #lesson-mark{position:static;margin-left:auto;flex-shrink:0}
-.lesson-bar>span{font:500 10.5px var(--u-mono);letter-spacing:.14em;color:var(--u-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lesson-bar>span{font:500 13px var(--u-font);color:var(--u-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #lesson-body .page{padding-top:28px}
 .pdfv{display:flex;flex-direction:column;gap:14px;align-items:center}
-.pdfv img{width:100%;max-width:880px;border-radius:8px;background:#fff;box-shadow:0 18px 40px -24px rgba(0,0,0,.9)}
-.pdfv small{font:500 10.5px var(--u-mono);letter-spacing:.12em;color:var(--u-faint)}
+.pdfv img{width:100%;max-width:880px;border-radius:var(--u-r-card);border:1px solid var(--u-line);background:#fff}
+.pdfv small{font:500 12.5px var(--u-font);color:var(--u-muted)}
 @media(max-width:640px){.lesson-bar{padding:16px 18px 0}}
 </style>
-
-<div class="pv-bar"><span>PREVIEW · NOT LIVE · NO LOGIN · PROGRESS IS SAVED IN THIS BROWSER ONLY</span><button type="button" id="pv-reset">Reset progress</button></div>
+</head>
+<body>
+<div class="pv-bar"><span>Preview · not live · no login · progress is saved in this browser only</span><button type="button" id="pv-reset">Reset progress</button></div>
 <div class="app-shell">
   <div class="course" style="display:block">
     <header class="topbar">
       <div class="topbar__brand">
         <img class="topbar__mark" alt="Unified Service and Consulting" src="/*LOGO*/">
-        <div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ TRAINING COURSE</span></div>
+        <div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ Training course</span></div>
       </div>
       <nav class="tabs" id="tabs" aria-label="Sections"></nav>
-      <div class="topbar__right"><span class="topbar__tag" id="ugl-user-email">PREVIEW</span><button type="button" class="theme-btn"></button></div>
+      <div class="topbar__right"><span class="topbar__tag" id="ugl-user-email">Preview</span><button type="button" class="theme-btn"></button></div>
     </header>
     <main class="main" id="portal"></main>
     <div id="lesson" hidden>
-      <div class="lesson-bar"><a class="back" id="lesson-back" href="#home">← BACK</a><span id="lesson-crumb"></span><button type="button" class="lcard__mark" id="lesson-mark" hidden><span class="m-off">Mark as read</span><span class="m-on">✓ Read</span><span class="m-undo">Mark as unread</span></button></div>
+      <div class="lesson-bar"><a class="back" id="lesson-back" href="#home">← Course</a><span id="lesson-crumb"></span><button type="button" class="lcard__mark" id="lesson-mark" hidden><span class="m-off">Mark as read</span><span class="m-on">✓ Read</span><span class="m-undo">Mark as unread</span></button></div>
       <div id="lesson-body"></div>
     </div>
   </div>
@@ -135,7 +162,10 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
   function get() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function put(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
   window.uglPreviewIsRead = function (id) { return get().indexOf(id) >= 0; };
-  window.uglPreviewReset = function () { try { Object.keys(localStorage).forEach(function (k) { if (/^ugl-/.test(k)) localStorage.removeItem(k); }); } catch (e) {} };
+  window.uglPreviewReset = function () {
+    try { Object.keys(localStorage).forEach(function (k) { if (/^ugl-/.test(k)) localStorage.removeItem(k); }); } catch (e) {}
+    try { Object.keys(sessionStorage).forEach(function (k) { if (/^ugl-/.test(k)) sessionStorage.removeItem(k); }); } catch (e) {}  // the helper's thread
+  };
   window.UGL_ENV = {
     loadDone: function () { return Promise.resolve(get()); },
     setDone: function (id, on) { var a = get().filter(function (x) { return x !== id; }); if (on) a.push(id); put(a); return Promise.resolve(); },
@@ -151,16 +181,25 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
 /*PORTAL*/
 </script>
 <script>
+/* The Ask index, inlined so the course helper searches it offline (empty when the content build has not run). */
+/*ASK*/
+</script>
+<script>
+/* The course helper: the robot button in the top bar and its panel. In the preview it answers from the course text only. */
+/*ASSIST*/
+</script>
+<script>
 /*MOUNTS*/
 (function () {
   var cat = window.UGL_CATALOG, PAGES = window.UGL_PREVIEW_PAGES, PDFS = /*PDFS*/, WITHHELD = /*WITHHELD*/;
+  var SECTION = { course: 'Course', tools: 'Tools', simulator: 'Simulator' };
   var portal = document.getElementById('portal'), lesson = document.getElementById('lesson'), body = document.getElementById('lesson-body');
   var lastTab = 'home';
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function crumb(it) {
-    if (it.section === 'course') return 'COURSE / ' + cat.tracks.filter(function (t) { return t.id === it.track; })[0].title.toUpperCase();
-    if (it.section === 'tools') return 'TOOLS / ' + cat.toolGroups.filter(function (g) { return g.id === it.group; })[0].title.toUpperCase();
-    return 'SIMULATOR';
+    if (it.section === 'course') return 'Course / ' + cat.tracks.filter(function (t) { return t.id === it.track; })[0].title;
+    if (it.section === 'tools') return 'Tools / ' + cat.toolGroups.filter(function (g) { return g.id === it.group; })[0].title;
+    return 'Simulator';
   }
   function hero(eyebrow, it, lead) {
     return '<section class="page-hero"><div class="eyebrow"><i></i>' + esc(eyebrow) + '</div><h1>' + esc(it.title) + '</h1><p class="lead">' + lead + '</p></section>';
@@ -170,9 +209,10 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
     if (!it || it.soon || it.hidden) return false;
     var key = it.path.replace(/^pages\//, '').replace(/\.html$/, '');
     window.scrollTo(0, 0);
-    document.getElementById('lesson-crumb').textContent = crumb(it) + ' / ' + it.title.toUpperCase();
+    document.getElementById('lesson-crumb').textContent = crumb(it) + ' / ' + it.title;
     lastTab = it.section;
-    document.getElementById('lesson-back').href = '#' + lastTab;
+    var back = document.getElementById('lesson-back');
+    back.href = '#' + lastTab; back.textContent = '← ' + (SECTION[lastTab] || 'Course');
     window.UGL_DRILLS = null;
     if (PAGES[key]) {
       body.innerHTML = '<main class="' + PAGES[key].cls + '">' + PAGES[key].html + '</main>';
@@ -185,14 +225,14 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
     } else if (PDFS[id]) {
       var imgs = '';
       for (var i = 1; i <= PDFS[id]; i++) imgs += '<img loading="lazy" src="pdf/' + id + '/' + i + '.jpg" alt="Page ' + i + ' of ' + esc(it.title) + '">';
-      body.innerHTML = '<main class="page">' + hero('DOCUMENT · PDF · ' + PDFS[id] + (PDFS[id] > 1 ? ' PAGES' : ' PAGE'), it, esc(it.desc) + ' On the live site this opens as the original PDF.') +
+      body.innerHTML = '<main class="page">' + hero('Document · PDF · ' + PDFS[id] + (PDFS[id] > 1 ? ' pages' : ' page'), it, esc(it.desc) + ' On the live site this opens as the original PDF.') +
         '<div class="pdfv">' + imgs + '</div></main>';
     } else if (it.kind === 'deck') {
-      body.innerHTML = '<main class="page">' + hero('TRAINING DECK', it, esc(it.desc)) +
+      body.innerHTML = '<main class="page">' + hero('Training deck', it, esc(it.desc)) +
         '<div class="card"><h3>Opens on the live site</h3><p style="margin:6px 0 0;color:var(--u-text-3);line-height:1.6">This narrated deck is unchanged from the current course. ' +
         'It is not bundled into the preview because the decks are 8 to 17 MB each. After launch it opens from this card, with its narration and slides.</p></div></main>';
     } else {
-      body.innerHTML = '<main class="page">' + hero('NOT IN PREVIEW', it, esc(it.desc)) +
+      body.innerHTML = '<main class="page">' + hero('Not in the preview', it, esc(it.desc)) +
         '<div class="card"><h3>Why it is missing here</h3><p style="margin:6px 0 0;color:var(--u-text-3);line-height:1.6">' + esc(WITHHELD[id] || 'This file opens on the live site.') + '</p></div></main>';
     }
     portal.hidden = true; lesson.hidden = false;
@@ -221,13 +261,16 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
     window.uglPortal.refresh();
   }
   window.addEventListener('hashchange', route);
-  // Links between pages (module.html?m=<id>#<anchor> on the live site) open inside the preview.
+  // Links between pages (module.html?m=<id>#<anchor> on the live site) open inside the preview; this includes
+  // the helper's "Open the page" links, so its panel closes first.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="module.html?m="]');
     if (!a) return;
     var u = /^module\.html\?m=([a-z0-9-]+)(?:#([\w-]+))?$/.exec(a.getAttribute('href'));
     if (!u) return;
     e.preventDefault();
+    var x = document.querySelector('.ua.is-open .ua__x');
+    if (x) x.click();
     location.hash = '#lesson-' + u[1] + (u[2] ? '--' + u[2] : '');
   });
   document.getElementById('pv-reset').addEventListener('click', function () { window.uglPreviewReset(); location.hash = '#home'; window.uglPortal.refresh(); });
@@ -235,6 +278,8 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
   route();
 })();
 </script>
+</body>
+</html>
 """
 
 if __name__ == "__main__":

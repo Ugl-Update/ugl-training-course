@@ -21,7 +21,8 @@
   var CSS = [
     '.ua-btn{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--u-line-2,rgba(255,255,255,.16));border-radius:var(--u-r-ctl,6px);background:transparent;color:var(--u-text-2,#dcdce0);cursor:pointer;transition:border-color .15s,color .15s,transform .12s cubic-bezier(.23,1,.32,1)}',
     '.ua-btn svg{width:19px;height:19px}.ua-btn:hover{border-color:var(--u-text-3,#b7b7bd);color:var(--u-text,#fff)}.ua-btn:active{transform:scale(.94)}',
-    '.ua-btn--fixed{position:fixed;top:12px;right:12px;z-index:2147483000;background:var(--u-surface,#121014)}',
+    '.ua-btn--fixed{position:fixed;top:12px;right:12px;z-index:2147483000;background:var(--surface,var(--u-surface,#121014));color:var(--ink-2,var(--u-text-2,#dcdce0));border-color:var(--line,var(--u-line-2,rgba(255,255,255,.16)))}',
+    '.ua-btn--deck{color:var(--light,var(--u-text-2,#dcdce0));border-color:var(--line2,var(--u-line-2,rgba(255,255,255,.16)))}',
     '.ua-back{position:fixed;inset:0;z-index:2147483100;background:rgba(0,0,0,.5);opacity:0;transition:opacity .2s cubic-bezier(.23,1,.32,1)}',
     '.ua{position:fixed;top:0;right:0;bottom:0;z-index:2147483101;width:min(400px,100vw);display:flex;flex-direction:column;background:var(--u-bg,#050505);color:var(--u-text,#fff);font:15px/1.5 var(--u-font,Archivo,system-ui,sans-serif);border-left:1px solid var(--u-line,rgba(255,255,255,.09));transform:translateX(100%);transition:transform .26s cubic-bezier(.32,.72,0,1)}',
     '.ua.is-open{transform:none}.ua-back.is-open{opacity:1}',
@@ -212,8 +213,19 @@
     if (!doc.body || doc.querySelector('.ua-btn')) return;
     if (!doc.getElementById('ua-css')) { var st = doc.createElement('style'); st.id = 'ua-css'; st.textContent = CSS; doc.head.appendChild(st); }
     var btn = doc.createElement('button'); btn.type = 'button'; btn.className = 'ua-btn'; btn.innerHTML = ICON; btn.title = 'Ask the course'; btn.setAttribute('aria-label', 'Ask the course');
-    var host = doc.querySelector('.topbar__right');
-    if (host) host.insertBefore(btn, host.firstChild); else { btn.className += ' ua-btn--fixed'; doc.body.appendChild(btn); }
+    var win = doc.defaultView || window, host = doc.querySelector('.topbar__right'), theme = doc.querySelector('#themeBtn,#themebtn');
+    if (host) host.insertBefore(btn, host.firstChild);
+    else if (theme && theme.parentNode && /^(static|relative)$/.test(win.getComputedStyle(theme).position)) {
+      // A deck's own control row: sit left of its theme switch, in its tokens.
+      btn.className += ' ua-btn--deck'; theme.parentNode.insertBefore(btn, theme);
+    } else {
+      btn.className += ' ua-btn--fixed'; doc.body.appendChild(btn);
+      if (theme) {
+        // A deck whose theme switch floats: sit just left of it, never on top of it.
+        var place = function () { var r = theme.getBoundingClientRect(); if (!r.width) return; btn.style.top = r.top + 'px'; btn.style.right = (win.innerWidth - r.left + 10) + 'px'; btn.style.width = btn.style.height = r.height + 'px'; };
+        place(); win.addEventListener('resize', place);
+      }
+    }
     var panel = null;
     btn.addEventListener('click', function () { if (!panel) panel = build(doc); panel.open(btn); });
     panels.push(btn);

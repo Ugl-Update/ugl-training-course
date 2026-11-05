@@ -15,46 +15,51 @@
   <link rel="stylesheet" href="ugl-site.css">
   <link rel="stylesheet" href="ugl-page.css">
   <style>
-    .adm-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:38px}
+    /* Follows DESIGN.md: one text face for labels (12 to 13px, sentence case), mono only for times and
+       ids, radii 8 (cards) / 6 (controls) / 4 (chips), colour only on state, no shadow or gradient. */
+    .adm-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
     .adm-tiles .stat b{font-size:28px}
-    .adm-tiles .stat.is-alert b{color:var(--u-red-ink)}
+    .adm-tiles .stat.is-alert b{color:var(--u-amber)}
     .adm-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 14px}
     .adm-h h2{font-size:22px;font-weight:700;color:var(--u-text)}
-    .adm-h span{font:500 11px var(--u-mono);letter-spacing:.12em;color:var(--u-faint)}
+    .adm-h span{font-size:13px;color:var(--u-muted)}
     .adm-sec{margin-bottom:44px}
     .alerts{display:grid;gap:8px}
-    .alert{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;background:var(--u-surface);border:1px solid var(--u-line);border-radius:12px}
+    .alert{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;background:var(--u-surface);border-radius:var(--u-r-card)}
     .alert i{width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--u-amber)}
-    .alert.is-red i{background:var(--u-red)}
+    .alert.is-red i{background:var(--u-neg)}
     .alert b{color:var(--u-text);font-weight:700}
     .alert p{margin:0;font-size:15px;line-height:1.45;color:var(--u-text-2)}
     .alert small{display:block;margin-top:3px;font-size:13px;color:var(--u-muted)}
     .alert time{font:500 12px var(--u-mono);color:var(--u-faint);white-space:nowrap}
-    .adm-empty{padding:18px;border:1px dashed var(--u-line-2);border-radius:12px;color:var(--u-text-3);font-size:15px}
+    .adm-empty{padding:18px;border:1px dashed var(--u-line-2);border-radius:var(--u-r-card);color:var(--u-text-3);font-size:15px}
     .adm-more{margin-top:10px}
     table.adm{width:100%;border-collapse:collapse;font-size:14.5px}
-    .adm th{text-align:left;font:500 10.5px var(--u-mono);letter-spacing:.14em;color:var(--u-muted);padding:12px 14px;border-bottom:1px solid var(--u-line-2);white-space:nowrap}
+    .adm th{text-align:left;font:500 12.5px var(--u-font);color:var(--u-muted);padding:12px 14px;border-bottom:1px solid var(--u-line-2);white-space:nowrap}
     .adm td{padding:12px 14px;border-bottom:1px solid var(--u-line);color:var(--u-text-2);vertical-align:middle}
-    .adm tr.is-open td{border-bottom:none;background:rgba(var(--u-red-rgb),.04)}
+    .adm tr.is-open td{border-bottom:none;background:var(--u-surface)}
     .adm .who{font-weight:700;color:var(--u-text)}
-    .adm .who small{display:block;font:500 11px var(--u-mono);letter-spacing:.06em;color:var(--u-faint);font-weight:500}
+    .adm .who small{display:block;font-size:12px;font-weight:500;color:var(--u-muted)}
+    .adm .why{font-size:13.5px;line-height:1.4;color:var(--u-amber);max-width:260px}
+    .adm .why.is-ok{color:var(--u-faint)}
     .meter{display:flex;align-items:center;gap:10px;min-width:140px}
-    .meter span{font:500 12.5px var(--u-mono);color:var(--u-text-3);white-space:nowrap}
-    .meter i{flex:1;height:5px;border-radius:3px;background:rgba(var(--u-ov-rgb),.1);overflow:hidden}
-    .meter i b{display:block;height:100%;background:var(--u-red)}
-    .pill{display:inline-block;font:600 11px var(--u-mono);letter-spacing:.06em;padding:4px 8px;border-radius:6px;border:1px solid var(--u-line-2);color:var(--u-text-3)}
-    .pill.is-red{color:var(--u-red-ink);border-color:rgba(var(--u-red-rgb),.5);background:rgba(var(--u-red-rgb),.08)}
+    .meter span{font-size:12.5px;color:var(--u-text-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+    .meter i{flex:1;height:4px;border-radius:2px;background:rgba(var(--u-ov-rgb),.1);overflow:hidden}
+    .meter i b{display:block;height:100%;background:var(--u-live)}
+    .pill{display:inline-block;font:500 12px var(--u-font);padding:3px 7px;border-radius:var(--u-r-chip);border:1px solid var(--u-line-2);color:var(--u-text-3)}
+    .pill.is-red{color:var(--u-neg);border-color:rgba(var(--u-neg-rgb),.5)}
     .pill.is-green{color:var(--u-green);border-color:rgba(var(--u-green-rgb),.45)}
+    .pill.is-limit{color:var(--u-amber);border-color:var(--u-amber)}
     .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     .acts .btn{padding:7px 12px;font-size:13px}
-    .detail td{padding:4px 14px 22px;background:rgba(var(--u-red-rgb),.04)}
+    .detail td{padding:4px 14px 22px;background:var(--u-surface)}
     .detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:22px}
     .detail h3{font-size:15px;font-weight:700;color:var(--u-text);margin:12px 0 8px}
-    .rows{display:grid;gap:0;border:1px solid var(--u-line);border-radius:10px;background:var(--u-surface);overflow:hidden}
+    .rows{display:grid;gap:0;border:1px solid var(--u-line);border-radius:var(--u-r-card);background:var(--u-surface-2);overflow:hidden}
     .rows div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:9px 12px;border-top:1px solid var(--u-line);font-size:14px;color:var(--u-text-2)}
     .rows div:first-child{border-top:none}
     .rows small{display:block;font-size:12.5px;color:var(--u-muted)}
-    .rows .r{color:var(--u-red-ink)}
+    .rows .r{color:var(--u-neg)}
     .rows time{font:500 11.5px var(--u-mono);color:var(--u-faint);white-space:nowrap}
     .add-user{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:4px 18px;padding:20px 22px;margin:0}
     .add-user .field{margin-bottom:12px}
@@ -62,33 +67,32 @@
     .pw-row input{flex:1;min-width:0}
     .pw-row .btn{flex-shrink:0;padding:0 14px;font-size:13.5px}
     .chk{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--u-text-2);cursor:pointer;margin-bottom:14px}
-    .chk input{width:17px;height:17px;accent-color:var(--u-red)}
+    .chk input{width:17px;height:17px;accent-color:var(--u-live)}
     .add-row{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .add-err{margin:0;font-size:14px;color:var(--u-red-ink)}
-    .cred{margin-top:14px;padding:16px 18px;border:1px solid rgba(var(--u-green-rgb),.45);background:rgba(var(--u-green-rgb),.08);border-radius:12px;font-size:15px;color:var(--u-text-2)}
+    .add-err{margin:0;font-size:14px;color:var(--u-neg)}
+    .cred{margin-top:14px;padding:16px 18px;border:1px solid rgba(var(--u-green-rgb),.45);border-radius:var(--u-r-card);font-size:15px;color:var(--u-text-2)}
     .cred b{color:var(--u-text)}
     .cred-box{display:flex;align-items:center;gap:10px 22px;flex-wrap:wrap;margin:10px 0 8px}
-    .cred-box code{font:600 15px var(--u-mono);color:var(--u-text);background:var(--u-inset);border:1px solid var(--u-line);border-radius:6px;padding:3px 8px;margin-left:6px}
+    .cred-box code{font:600 15px var(--u-mono);color:var(--u-text);background:var(--u-inset);border:1px solid var(--u-line);border-radius:var(--u-r-ctl);padding:3px 8px;margin-left:6px}
     .cred small{display:block;font-size:13px;color:var(--u-muted)}
-    .pill.is-limit{color:var(--u-amber);border-color:var(--u-amber)}
     .more>summary{list-style:none;cursor:pointer;user-select:none}
     .more>summary::-webkit-details-marker{display:none}
     .more[open]{flex-basis:100%;display:flex;flex-direction:column;align-items:flex-end}
     .more__menu{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}
-    .btn.is-danger{color:var(--u-red-ink);border-color:rgba(var(--u-red-rgb),.5)}
+    .btn.is-danger{color:var(--u-neg);border-color:rgba(var(--u-neg-rgb),.5)}
     .acc h3{margin-top:14px}
     .acc-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 14px}
-    .acc-mode{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--u-line-2);border-radius:12px;background:var(--u-surface);cursor:pointer;min-width:0}
-    .acc-mode.is-on{border-color:rgba(var(--u-red-rgb),.55);background:rgba(var(--u-red-rgb),.07)}
-    .acc-mode input,.acc-group input{accent-color:var(--u-red);width:16px;height:16px;margin:2px 0 0;flex-shrink:0}
+    .acc-mode{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--u-line-2);border-radius:var(--u-r-card);background:var(--u-surface-2);cursor:pointer;min-width:0}
+    .acc-mode.is-on{border-color:var(--u-live)}
+    .acc-mode input,.acc-group input{accent-color:var(--u-live);width:16px;height:16px;margin:2px 0 0;flex-shrink:0}
     .acc-mode b{display:block;font-size:14.5px;color:var(--u-text)}
     .acc-mode small{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:var(--u-muted)}
     .acc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:14px}
-    .acc-group{padding:10px 14px 8px;border:1px solid var(--u-line);border-radius:12px;background:var(--u-surface)}
+    .acc-group{padding:10px 14px 8px;border:1px solid var(--u-line);border-radius:var(--u-r-card);background:var(--u-surface-2)}
     .acc-group label{display:flex;gap:9px;align-items:flex-start;padding:4px 0;font-size:14px;line-height:1.35;color:var(--u-text-2);cursor:pointer}
-    .acc-group label.acc-all{padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--u-line);font:600 10.5px/1.6 var(--u-mono);letter-spacing:.12em;color:var(--u-muted)}
+    .acc-group label.acc-all{padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--u-line);font:600 13px/1.6 var(--u-font);color:var(--u-muted)}
     .acc-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .acc-msg{margin:0;font-size:14px;color:var(--u-red-ink)}
+    .acc-msg{margin:0;font-size:14px;color:var(--u-neg)}
     .acc-msg.is-ok{color:var(--u-green)}
     @media(max-width:860px){.add-user{grid-template-columns:1fr}.acc-modes{grid-template-columns:1fr}}
     @media(max-width:860px){.adm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}}
@@ -99,31 +103,31 @@
     <header class="topbar">
       <div class="topbar__brand">
         <img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">
-        <div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ ADMIN</span></div>
+        <div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ Admin</span></div>
       </div>
       <div class="topbar__right">
         <button type="button" class="theme-btn"></button>
-        <a class="back" href="index.html">← COURSE</a>
+        <a class="back" href="index.html">← Course</a>
       </div>
     </header>
     <main class="page page--wide">
       <section class="page-hero">
-        <div class="eyebrow"><i></i>ADMIN · ACTIVITY &amp; SECURITY</div>
-        <h1>Trainee activity</h1>
-        <p class="lead">What each trainee marked as read, what they actually opened and for how long, and anything that looked like copying, scraping or an AI tool. Last 30 days. Use <b>Access</b> on a person's row to limit what they can open.</p>
+        <div class="eyebrow"><i></i>Activity and security</div>
+        <h1>Trainees</h1>
+        <p class="lead">Who needs a nudge comes first. Then what each trainee marked as read, what they actually opened and for how long, and anything that looked like copying, scraping or an AI tool. Last 30 days. Use <b>Access</b> on a person's row to limit what they can open.</p>
         <div class="chips"><button type="button" class="btn btn--ghost" id="refresh">Refresh</button></div>
       </section>
+      <div id="out"><p class="note">Loading…</p></div>
       <section class="adm-sec" id="people" hidden>
-        <div class="adm-h"><h2>Add a person</h2><span>USERNAME AND PASSWORD · NO EMAIL NEEDED</span></div>
+        <div class="adm-h"><h2>Add a person</h2><span>Username and password, no email needed</span></div>
         <form class="card add-user" id="add-user" autocomplete="off" novalidate>
-          <div class="field"><label for="nu-name">USERNAME</label><input id="nu-name" type="text" placeholder="e.g. omar" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="32"></div>
-          <div class="field"><label for="nu-pass">PASSWORD</label><div class="pw-row"><input id="nu-pass" type="text" autocomplete="new-password" spellcheck="false" maxlength="72" placeholder="at least 8 characters"><button type="button" class="btn btn--ghost" id="nu-gen">Generate</button></div></div>
+          <div class="field"><label for="nu-name">Username</label><input id="nu-name" type="text" placeholder="e.g. omar" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="32"></div>
+          <div class="field"><label for="nu-pass">Password</label><div class="pw-row"><input id="nu-pass" type="text" autocomplete="new-password" spellcheck="false" maxlength="72" placeholder="at least 8 characters"><button type="button" class="btn btn--ghost" id="nu-gen">Generate</button></div></div>
           <label class="chk"><input type="checkbox" id="nu-admin"> Make this person an admin (they can see this page and add people)</label>
           <div class="add-row"><button class="btn" type="submit" id="nu-go">Add person</button><p class="add-err" id="nu-err" role="alert"></p></div>
         </form>
         <div id="notice"></div>
       </section>
-      <div id="out"><p class="note">Loading…</p></div>
     </main>
   </div>
   <script src="vendor/supabase.min.js"></script>
@@ -131,6 +135,7 @@
   <script src="ugl-catalog.js"></script>
   <script src="ugl-auth.js"></script>
   <script src="ugl-theme.js"></script>
+  <script src="ugl-assist.js" defer></script>
   <script>
   (function () {
     var db = window.uglDb, cat = window.UGL_CATALOG, dom = '@' + window.UGL_CONFIG.userDomain;
@@ -233,10 +238,10 @@
     // The content gateway enforces them; the course menu only shows what is open.
     function allows(lim, it) { return !lim || (lim.mode === 'tools' ? it.section === 'tools' : (lim.items || []).indexOf(it.id) >= 0); }
     function accessPill(lim) {
-      if (!lim) return '<span class="pill">EVERYTHING</span>';
-      if (lim.mode === 'tools') return '<span class="pill is-limit">TOOLS ONLY</span>';
+      if (!lim) return '<span class="pill">Everything</span>';
+      if (lim.mode === 'tools') return '<span class="pill is-limit">Tools only</span>';
       var names = PICK.filter(function (i) { return allows(lim, i); }).map(function (i) { return i.title; });
-      return '<span class="pill is-limit" title="' + esc(names.join(', ')) + '">' + names.length + (names.length === 1 ? ' ITEM' : ' ITEMS') + '</span>';
+      return '<span class="pill is-limit" title="' + esc(names.join(', ')) + '">' + names.length + (names.length === 1 ? ' item' : ' items') + '</span>';
     }
     function accessEditor(u, lim) {
       var mode = !lim ? 'all' : lim.mode, name = esc(uname(u.email));
@@ -248,13 +253,13 @@
         return '<label class="acc-mode' + (m[0] === mode ? ' is-on' : '') + '"><input type="radio" name="acc-mode" value="' + m[0] + '"' + (m[0] === mode ? ' checked' : '') + '>' +
           '<span><b>' + m[1] + '</b><small>' + m[2] + '</small></span></label>';
       }).join('');
-      var groups = cat.tracks.map(function (t) { return { k: 'COURSE · ' + t.title, items: PICK.filter(function (i) { return i.section === 'course' && i.track === t.id; }) }; })
-        .concat(cat.toolGroups.map(function (g) { return { k: 'TOOLS · ' + g.title, items: PICK.filter(function (i) { return i.section === 'tools' && i.group === g.id; }) }; }))
-        .concat([{ k: 'SIMULATOR', items: PICK.filter(function (i) { return i.section === 'simulator'; }) }]);
+      var groups = cat.tracks.map(function (t) { return { k: 'Course · ' + t.title, items: PICK.filter(function (i) { return i.section === 'course' && i.track === t.id; }) }; })
+        .concat(cat.toolGroups.map(function (g) { return { k: 'Tools · ' + g.title, items: PICK.filter(function (i) { return i.section === 'tools' && i.group === g.id; }) }; }))
+        .concat([{ k: 'Simulator', items: PICK.filter(function (i) { return i.section === 'simulator'; }) }]);
       var picked = mode === 'custom' ? lim.items || [] : [];
       var pick = groups.filter(function (g) { return g.items.length; }).map(function (g) {
         var on = g.items.filter(function (i) { return picked.indexOf(i.id) >= 0; }).length;
-        return '<div class="acc-group"><label class="acc-all"><input type="checkbox" data-acc-all' + (on === g.items.length ? ' checked' : '') + (on && on < g.items.length ? ' data-mixed' : '') + '>' + esc(g.k.toUpperCase()) + '</label>' +
+        return '<div class="acc-group"><label class="acc-all"><input type="checkbox" data-acc-all' + (on === g.items.length ? ' checked' : '') + (on && on < g.items.length ? ' data-mixed' : '') + '>' + esc(g.k) + '</label>' +
           g.items.map(function (i) {
             return '<label><input type="checkbox" name="acc-item" value="' + esc(i.id) + '"' + (picked.indexOf(i.id) >= 0 ? ' checked' : '') + '>' + esc(i.title) + '</label>';
           }).join('') + '</div>';
@@ -287,13 +292,73 @@
       var alerts7 = alerts.filter(function (a) { return new Date(a.at) > week; }).length;
       var trainees = d.users.filter(function (u) { return !u.is_admin; }).length;
 
-      var h = '<div class="adm-tiles">' +
-        '<div class="stat"><small>TRAINEES</small><b>' + trainees + '</b><span>' + d.users.length + ' accounts in total</span></div>' +
-        '<div class="stat"><small>LESSONS OPENED</small><b>' + opens7 + '</b><span>last 7 days</span></div>' +
-        '<div class="stat"><small>TIME IN LESSONS</small><b>' + dur(secs7) + '</b><span>last 7 days, everyone</span></div>' +
-        '<div class="stat' + (alerts7 ? ' is-alert' : '') + '"><small>ALERTS</small><b>' + alerts7 + '</b><span>last 7 days</span></div></div>';
+      // Who needs a nudge, and why, in one line: never started, quiet for a week, or a drill set with
+      // three or more misses (the best round per stop counts, so one bad first try is not held against them).
+      var drills = {};
+      d.events.forEach(function (e) {
+        if (e.kind !== 'drill' || !e.detail || !by[e.user_id]) return;
+        var x = e.detail, k = String(x.stop || e.module || ''), r = num(x.right), n = num(x.n);
+        if (!n) return;
+        var u = drills[e.user_id] || (drills[e.user_id] = {});
+        if (!u[k] || r > u[k].right) u[k] = { right: r, n: n };
+      });
+      var now = Date.now();
+      Object.keys(by).forEach(function (id) {
+        var s = by[id], lim = d.limits[id] || null;
+        s.why = '';
+        if (s.u.is_admin) return;
+        var course = COURSE.filter(function (i) { return allows(lim, i); });
+        var finished = course.length && course.every(function (i) { return s.marks[i.id]; });
+        var missed = Object.keys(drills[id] || {}).map(function (k) { var x = drills[id][k]; return { k: k, miss: x.n - x.right, n: x.n }; })
+          .filter(function (x) { return x.miss >= 3; }).sort(function (a, b) { return b.miss - a.miss; })[0];
+        if (s.u.blocked) return;
+        if (!s.u.last_sign_in_at) s.why = 'Never signed in';
+        else if (!s.last && !Object.keys(s.marks).length) s.why = 'Signed in but never opened a lesson';
+        else if (missed) s.why = 'Missed ' + missed.miss + ' of ' + missed.n + ' drills at ' + title(missed.k);
+        else if (!finished && (!s.last || now - new Date(s.last) > 7 * DAY)) s.why = 'No activity for ' + (s.last ? Math.floor((now - new Date(s.last)) / DAY) + ' days' : 'a week or more');
+      });
+      var nudges = Object.keys(by).filter(function (id) { return by[id].why; }).length;
 
-      h += '<section class="adm-sec"><div class="adm-h"><h2>Alerts</h2><span>FAILED SIGN-INS, BLOCKED REQUESTS, COPY ATTEMPTS</span></div>';
+      // The trainee table comes first: the people who need a nudge at the top, then everyone by last activity.
+      var h = '<section class="adm-sec"><div class="adm-h"><h2>Trainees</h2><span>' + trainees + (trainees === 1 ? ' trainee' : ' trainees') + ' · ' + COURSE.length + ' course lessons' +
+        (nudges ? ' · ' + nudges + (nudges === 1 ? ' needs' : ' need') + ' a nudge' : '') + '</span></div><div class="tbl-wrap"><table class="adm"><thead><tr>' +
+        '<th>User</th><th>Nudge</th><th>Can open</th><th>Marked as read</th><th>Last opened</th><th>Time, 7 days</th><th>Alerts, 7 days</th><th></th></tr></thead><tbody>';
+      d.users.slice().sort(function (a, b) {
+        var na = by[a.id].why ? 1 : 0, nb = by[b.id].why ? 1 : 0;
+        if (na !== nb) return nb - na;
+        return (by[b.id].last || '') > (by[a.id].last || '') ? 1 : -1;
+      }).forEach(function (u) {
+        var s = by[u.id], lim = d.limits[u.id] || null, open = openUser === u.id, editing = accessUser === u.id;
+        // Progress counts only the lessons this person is allowed to open.
+        var course = COURSE.filter(function (i) { return allows(lim, i); }), done = course.filter(function (i) { return s.marks[i.id]; }).length;
+        h += '<tr' + (open || editing ? ' class="is-open"' : '') + '><td class="who">' + esc(uname(u.email)) + '<small>' + (u.is_admin ? 'Admin' : 'Trainee') + (u.blocked ? ' · blocked' : '') +
+          (u.last_sign_in_at ? ' · signed in ' + esc(when(u.last_sign_in_at)) : ' · never signed in') + '</small></td>' +
+          '<td class="why' + (s.why ? '' : ' is-ok') + '">' + (s.why ? esc(s.why) : u.is_admin ? '' : u.blocked ? 'Blocked' : 'On track') + '</td>' +
+          '<td>' + accessPill(lim) + '</td>' +
+          '<td>' + (course.length ? '<div class="meter"><i><b style="width:' + Math.round(done / course.length * 100) + '%"></b></i><span>' + done + ' / ' + course.length + '</span></div>' : '<span class="pill">No lessons</span>') + '</td>' +
+          '<td>' + (s.last ? esc(when(s.last)) : '<span class="pill">Nothing yet</span>') + '</td><td>' + dur(s.secs7) + '</td>' +
+          '<td>' + (s.alerts7 ? '<span class="pill is-red">' + s.alerts7 + '</span>' : '<span class="pill is-green">None</span>') + '</td>' +
+          '<td><div class="acts"><button type="button" class="btn btn--ghost" data-detail="' + u.id + '">' + (open ? 'Hide' : 'Details') + '</button>' +
+          (u.is_admin ? '' : '<button type="button" class="btn btn--ghost" data-access="' + u.id + '">' + (editing ? 'Close access' : 'Access') + '</button>') +
+          '<button type="button" class="btn btn--ghost" data-pw="' + u.id + '">Reset password</button>' +
+          (u.is_admin ? '' : u.blocked ? '<button type="button" class="btn" data-unblock="' + u.id + '">Unblock</button>' : '<button type="button" class="btn btn--ghost" data-block="' + u.id + '">Block</button>') +
+          // Your own account has no More menu: nobody can delete themselves or drop their own admin rights.
+          (u.id === me.id ? '' : '<details class="more"><summary class="btn btn--ghost">More</summary><div class="more__menu">' +
+            (u.is_admin ? '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="0">Remove admin rights</button>'
+              : '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="1">Make admin</button>') +
+            '<button type="button" class="btn btn--ghost is-danger" data-delete="' + u.id + '">Delete account</button></div></details>') +
+          '</div></td></tr>';
+        if (editing) h += '<tr class="detail"><td colspan="8">' + accessEditor(u, lim) + '</td></tr>';
+        if (open) h += '<tr class="detail"><td colspan="8">' + detail(s, alerts) + '</td></tr>';
+      });
+      h += '</tbody></table></div></section>';
+
+      h += '<section class="adm-sec"><div class="adm-h"><h2>Alerts</h2><span>Failed sign-ins, blocked requests, copy attempts</span></div>';
+      h += '<div class="adm-tiles">' +
+        '<div class="stat"><small>Trainees</small><b>' + trainees + '</b><span>' + d.users.length + ' accounts in total</span></div>' +
+        '<div class="stat"><small>Lessons opened</small><b>' + opens7 + '</b><span>last 7 days</span></div>' +
+        '<div class="stat"><small>Time in lessons</small><b>' + dur(secs7) + '</b><span>last 7 days, everyone</span></div>' +
+        '<div class="stat' + (alerts7 ? ' is-alert' : '') + '"><small>Alerts</small><b>' + alerts7 + '</b><span>last 7 days</span></div></div>';
       if (!alerts.length) h += '<div class="adm-empty">Nothing suspicious in the last 30 days.</div>';
       else {
         h += '<div class="alerts">' + alerts.slice(0, showAll ? alerts.length : 12).map(function (a) {
@@ -305,33 +370,6 @@
         if (alerts.length > 12) h += '<div class="adm-more"><button type="button" class="btn btn--ghost" id="more">' + (showAll ? 'Show fewer' : 'Show all ' + alerts.length) + '</button></div>';
       }
       h += '</section>';
-
-      h += '<section class="adm-sec"><div class="adm-h"><h2>Trainees</h2><span>' + COURSE.length + ' COURSE LESSONS</span></div><div class="tbl-wrap"><table class="adm"><thead><tr>' +
-        '<th>USER</th><th>CAN OPEN</th><th>MARKED AS READ</th><th>LAST OPENED</th><th>TIME (7 DAYS)</th><th>ALERTS (7 DAYS)</th><th></th></tr></thead><tbody>';
-      d.users.slice().sort(function (a, b) { return (by[b.id].last || '') > (by[a.id].last || '') ? 1 : -1; }).forEach(function (u) {
-        var s = by[u.id], lim = d.limits[u.id] || null, open = openUser === u.id, editing = accessUser === u.id;
-        // Progress counts only the lessons this person is allowed to open.
-        var course = COURSE.filter(function (i) { return allows(lim, i); }), done = course.filter(function (i) { return s.marks[i.id]; }).length;
-        h += '<tr' + (open || editing ? ' class="is-open"' : '') + '><td class="who">' + esc(uname(u.email)) + '<small>' + (u.is_admin ? 'ADMIN' : 'TRAINEE') + (u.blocked ? ' · BLOCKED' : '') +
-          (u.last_sign_in_at ? ' · SIGNED IN ' + esc(when(u.last_sign_in_at).toUpperCase()) : ' · NEVER SIGNED IN') + '</small></td>' +
-          '<td>' + accessPill(lim) + '</td>' +
-          '<td>' + (course.length ? '<div class="meter"><i><b style="width:' + Math.round(done / course.length * 100) + '%"></b></i><span>' + done + ' / ' + course.length + '</span></div>' : '<span class="pill">NO LESSONS</span>') + '</td>' +
-          '<td>' + (s.last ? esc(when(s.last)) : '<span class="pill">NOTHING YET</span>') + '</td><td>' + dur(s.secs7) + '</td>' +
-          '<td>' + (s.alerts7 ? '<span class="pill is-red">' + s.alerts7 + '</span>' : '<span class="pill is-green">NONE</span>') + '</td>' +
-          '<td><div class="acts"><button type="button" class="btn btn--ghost" data-detail="' + u.id + '">' + (open ? 'Hide' : 'Details') + '</button>' +
-          (u.is_admin ? '' : '<button type="button" class="btn btn--ghost" data-access="' + u.id + '">' + (editing ? 'Close access' : 'Access') + '</button>') +
-          '<button type="button" class="btn btn--ghost" data-pw="' + u.id + '">Reset password</button>' +
-          (u.is_admin ? '' : u.blocked ? '<button type="button" class="btn" data-unblock="' + u.id + '">Unblock</button>' : '<button type="button" class="btn btn--ghost" data-block="' + u.id + '">Block</button>') +
-          // Your own account has no More menu: nobody can delete themselves or drop their own admin rights.
-          (u.id === me.id ? '' : '<details class="more"><summary class="btn btn--ghost">More</summary><div class="more__menu">' +
-            (u.is_admin ? '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="0">Remove admin rights</button>'
-              : '<button type="button" class="btn btn--ghost" data-role="' + u.id + '" data-admin="1">Make admin</button>') +
-            '<button type="button" class="btn btn--ghost is-danger" data-delete="' + u.id + '">Delete account</button></div></details>') +
-          '</div></td></tr>';
-        if (editing) h += '<tr class="detail"><td colspan="7">' + accessEditor(u, lim) + '</td></tr>';
-        if (open) h += '<tr class="detail"><td colspan="7">' + detail(s, alerts) + '</td></tr>';
-      });
-      h += '</tbody></table></div></section>';
       out.innerHTML = h;
       out.querySelectorAll('[data-mixed]').forEach(function (x) { x.indeterminate = true; });
     }

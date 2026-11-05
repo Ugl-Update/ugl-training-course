@@ -264,7 +264,7 @@ class Road:
             s, d, t = b["ticket"]; g = s + d + t
             row = lambda k, v, lim: f'<div class="ticket__r{" is-over" if v > lim else ""}"><span>{k}</span><b>{v:,} lb</b></div>'
             # The ticket's own words stay as a scale prints them; the course's tag ("Before", "After") is sentence case.
-            return (f'<figure class="ticket"><div class="ticket__h">SCALE TICKET <small>{esc(sentence(b.get("k", "Example")))}</small></div>{row("STEER AXLE", s, 12400)}{row("DRIVE AXLE", d, 34000)}'
+            return (f'<figure class="ticket" data-ui><div class="ticket__h">SCALE TICKET <small>{esc(sentence(b.get("k", "Example")))}</small></div>{row("STEER AXLE", s, 12400)}{row("DRIVE AXLE", d, 34000)}'
                     f'{row("TRAILER AXLE", t, 34000)}{row("GROSS WEIGHT", g, 80000)}<figcaption>{esc(b.get("t", ""))}</figcaption></figure>')
         if "tickets" in b: return '<div class="tickets">' + "".join(self.block({"ticket": x[0], "k": x[1], "t": x[2]}) for x in b["tickets"]) + "</div>"
         if "routes" in b:

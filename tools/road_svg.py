@@ -18,6 +18,7 @@ def svg(h, body, label):
 
 
 def text(x, y, s, cls="dg-t", anchor="middle", size=14, weight="", extra=""):
+    size = max(size, 11)  # nothing on a diagram below 11px (DESIGN.md)
     w = f' font-weight="{weight}"' if weight else ""
     return f'<text x="{x}" y="{y}" class="{cls}" text-anchor="{anchor}" font-size="{size}"{w}{extra}>{esc(s)}</text>'
 
@@ -79,7 +80,7 @@ def pallets():
         x0 = 20 + i * 185
         out.append(box(x0, 50, pw, ph, "dg-trailer-top", 4))
         out.append(text(x0 + pw / 2, 30, h1, "dg-t", size=13, weight="700"))
-        out.append(text(x0 + pw / 2, 245, h2, "dg-a", size=12, weight="600"))
+        out.append(text(x0 + pw / 2, 274, h2, "dg-a", size=12, weight="600"))
         # pallets as squares in two columns (48 x 40 in a 100-wide trailer ~ 56 x 46 here)
         def pal(px, py, w=56, h=46, cls="dg-pallet"):
             return box(px, py, w, h, cls, 3)
@@ -91,7 +92,7 @@ def pallets():
         elif kind == "turn":
             for r in range(3):
                 out.append(pal(x0 + 8, 58 + r * 54, 65, 46)); out.append(pal(x0 + 77, 58 + r * 54, 65, 46))
-            out.append(text(x0 + pw / 2, 215, "pallets turned: 2 × 48 in fills the 100 in width", "dg-m", size=9))
+            out.append(lines(x0 + pw / 2, 236, ["pallets turned 90°:", "2 × 48 in fills the 100 in"], "dg-m", size=11, lh=13))
         elif kind == "alone":
             for r in range(2):
                 out.append(pal(x0 + 8, 58 + r * 54)); out.append(pal(x0 + 70, 58 + r * 54))
@@ -102,9 +103,9 @@ def pallets():
                 out.append(pal(x0 + 8, 58 + r * 54)); out.append(pal(x0 + 70, 58 + r * 54))
             for k, y in enumerate((178, 192, 206)):
                 out.append(f'<line x1="{x0 + 4}" y1="{y}" x2="{x0 + pw - 4}" y2="{y}" class="dg-lock"/>')
-            out.append(text(x0 + pw / 2, 226, "load locks across the trailer, against the last row", "dg-m", size=8.5))
-    out.append(text(W / 2, 272, "Top view. The doors are at the bottom of each drawing; the load must not be able to slide towards them.", "dg-m", size=12))
-    return svg(285, "".join(out), "Top view of a trailer floor: gaps need airbags, pallets turned to fill the row, a lone pallet split in two, load locks across the last row")
+            out.append(lines(x0 + pw / 2, 236, ["locks across the trailer,", "against the last row"], "dg-m", size=11, lh=13))
+    out.append(text(W / 2, 300, "Top view. The doors are at the bottom of each drawing; the load must not be able to slide towards them.", "dg-m", size=12))
+    return svg(314, "".join(out), "Top view of a trailer floor: gaps need airbags, pallets turned to fill the row, a lone pallet split in two, load locks across the last row")
 
 
 # ------------------------------------------------------------------ 3. the reefer control panel

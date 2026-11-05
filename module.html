@@ -14,18 +14,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script>try{if(localStorage.getItem('ugl-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
   <style>
-    html,body{margin:0;height:100%;background:#141415;color:#f2f2f3;font-family:system-ui,sans-serif}
-    html[data-theme="light"],html[data-theme="light"] body{background:#EFE7D7;color:#2B2620}
+    /* The loading screen: the site's ground and the live hue, before any stylesheet has arrived. */
+    html,body{margin:0;height:100%;background:#050505;color:#dcdce0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    html[data-theme="light"],html[data-theme="light"] body{background:#f4f3f7;color:#34333a}
     .box{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
-    .msg{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.18em;opacity:.7;max-width:520px;line-height:1.6}
+    .msg{font-size:14px;max-width:520px;line-height:1.6}
     .bar{width:min(320px,80vw);height:3px;background:rgba(128,128,128,.25);border-radius:2px;overflow:hidden}
-    .bar i{display:block;height:100%;width:0;background:#b8211b;transition:width .15s}
-    a{color:#c2412f;font-size:14px}
+    .bar i{display:block;height:100%;width:0;background:#00e5ff;transition:width .15s}
+    html[data-theme="light"] .bar i{background:#00c2d8}
+    a{color:#cdb0ff;font-size:14px}
+    html[data-theme="light"] a{color:#3b0a6b}
   </style>
 </head>
 <body>
   <div class="box" id="box">
-    <div class="msg" id="msg">LOADING…</div>
+    <div class="msg" id="msg">Loading…</div>
     <div class="bar"><i id="fill"></i></div>
   </div>
   <script src="vendor/supabase.min.js"></script>
@@ -34,6 +37,7 @@
   <script src="ugl-auth.js"></script>
   <script src="ugl-theme.js"></script>
   <script src="ugl-guard.js"></script>
+  <script src="ugl-assist.js"></script>
   <script>
   (function () {
     var cfg = window.UGL_CONFIG, db = window.uglDb, guard = window.uglGuard;
@@ -41,19 +45,21 @@
     var slug = new URLSearchParams(location.search).get('m');
     var item = window.UGL_CATALOG.items.filter(function (i) { return i.id === slug && !i.hidden && /\.(html|pdf)$/.test(i.path || ''); })[0];
     var file = item ? item.path : null;
-    var SECTION = { course: 'COURSE', tools: 'TOOLS', simulator: 'SIMULATOR' };
+    var SECTION = { course: 'Course', tools: 'Tools', simulator: 'Simulator' };
     var REFUSED = {
-      'automated-browser': 'AUTOMATED BROWSERS CANNOT OPEN COURSE MATERIAL',
-      'ai-browser': 'AI BROWSERS CANNOT OPEN COURSE MATERIAL. USE CHROME, EDGE, SAFARI OR FIREFOX.',
-      'bot-or-script': 'THIS BROWSER CANNOT OPEN COURSE MATERIAL',
-      'blocked-user': 'YOUR ACCESS IS PAUSED. CONTACT YOUR TRAINER.',
-      'no-access': 'THIS IS NOT OPEN TO YOU. ASK YOUR TRAINER IF YOU NEED IT.',
-      'too-many-requests': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
-      'bulk-download': 'TOO MANY LESSONS OPENED IN A SHORT TIME. TRY AGAIN IN A FEW MINUTES.',
-      'auto-blocked': 'YOUR ACCESS HAS BEEN BLOCKED. THIS INCIDENT HAS BEEN FORWARDED TO THE ADMIN.',
-      'staging-admins-only': 'THIS IS THE STAGING SITE, FOR ADMINS ONLY. OPEN THE LIVE SITE INSTEAD.',
-      'not-found': 'NOT FOUND'
+      'automated-browser': 'Automated browsers cannot open course material.',
+      'ai-browser': 'AI browsers cannot open course material. Use Chrome, Edge, Safari or Firefox.',
+      'bot-or-script': 'This browser cannot open course material.',
+      'blocked-user': 'Your access is paused. Contact your trainer.',
+      'no-access': 'This is not open to you. Ask your trainer if you need it.',
+      'too-many-requests': 'Too many lessons opened in a short time. Try again in a few minutes.',
+      'bulk-download': 'Too many lessons opened in a short time. Try again in a few minutes.',
+      'auto-blocked': 'Your access has been blocked. This incident has been forwarded to the admin.',
+      'staging-admins-only': 'This is the staging site, for admins only. Open the live site instead.',
+      'not-found': 'Not found.'
     };
+    // The refusals that are worth repeating when only the narration or the pictures failed.
+    var REPEAT = /too many|paused/i;
     var token = null, name = 'trainee', sig = null, locked = false;
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
@@ -72,7 +78,7 @@
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (j) {
           if (res.ok && j.url) return j;
-          var err = new Error(REFUSED[j.reason] || (res.status === 401 ? 'PLEASE SIGN IN AGAIN' : res.status === 403 ? 'ACCESS DENIED' : 'COULD NOT LOAD'));
+          var err = new Error(REFUSED[j.reason] || (res.status === 401 ? 'Please sign in again.' : res.status === 403 ? 'Access denied.' : 'Could not load.'));
           err.reason = j.reason;
           if (j.reason === 'auto-blocked') lockout(j.why);
           throw err;
@@ -112,17 +118,17 @@
       var box = document.createElement('div');
       box.setAttribute('role', 'alert');
       box.setAttribute('style', 'position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;' +
-        'text-align:center;background:#141415;color:#f2f2f3;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif');
-      box.innerHTML = '<div style="font:600 12px ui-monospace,Menlo,monospace;letter-spacing:.18em;color:#ff6b61">ACCESS BLOCKED</div>' +
+        'text-align:center;background:#050505;color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif');
+      box.innerHTML = '<div style="font-size:13px;color:#ff7a7a">Access blocked</div>' +
         '<h1 style="margin:0;max-width:560px;font:700 26px/1.25 system-ui,-apple-system,sans-serif">This incident has been forwarded to the admin.</h1>' +
-        '<p style="margin:0;max-width:520px;color:#c9c9cf">' + esc(why || 'A course security rule was broken.') + ' Your account stays blocked until the admin restores it.</p>' +
-        '<a href="index.html?out=auto" style="color:#ff8a7a;font-size:15px">Back to sign-in</a>';
+        '<p style="margin:0;max-width:520px;color:#dcdce0">' + esc(why || 'A course security rule was broken.') + ' Your account stays blocked until the admin restores it.</p>' +
+        '<a href="index.html?out=auto" style="color:#cdb0ff;font-size:15px">Back to sign-in</a>';
       document.body.appendChild(box);
     }
 
     function download(url, size, progress) {
       return fetch(url).then(function (res) {
-        if (!res.ok) throw new Error('COULD NOT LOAD');
+        if (!res.ok) throw new Error('Could not load.');
         var total = size || +res.headers.get('content-length') || 0, got = 0, chunks = [];
         if (!res.body || !res.body.getReader) return res.blob();
         var reader = res.body.getReader();
@@ -202,7 +208,7 @@
         return readPack(blob, window.UGL_AUDIO || (window.UGL_AUDIO = {}), 'audio/mpeg');
       }).then(function () { guard.toast('Narration ready', 1600); }, function (e) {
         if (locked) return;
-        guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Narration could not load. Refresh the page to try again.', 6000);
+        guard.toast(REPEAT.test(e.message) ? e.message : 'Narration could not load. Refresh the page to try again.', 6000);
       });
     }
 
@@ -226,13 +232,15 @@
         new MutationObserver(place).observe(document.body, { childList: true, subtree: true });
       }).catch(function (e) {
         if (locked) return;
-        guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Pictures could not load. Refresh the page to try again.', 6000);
+        guard.toast(REPEAT.test(e.message) ? e.message : 'Pictures could not load. Refresh the page to try again.', 6000);
       });
     }
 
     function protect() {
       guard.install({ name: name, report: report, onBlocked: lockout }); readButton();
       window.uglStageBadge(document);
+      // The course helper's button goes into the lesson's top bar (ugl-assist.js).
+      window.uglAssist && window.uglAssist.mount(document);
       window.uglReport = report;  // road stops report finished drill sets through the same channel
       // Blocked or deleted while reading: leave the lesson for the login screen (ugl-auth.js).
       window.uglWatchSession(function (reason) { if (!locked) location.replace('index.html?out=' + reason); });
@@ -241,22 +249,23 @@
     // Course lessons count toward progress only when the trainee marks them as read (lesson_done).
     function readButton() {
       if (item.section !== 'course') return;
+      // The one floating pill on the site (DESIGN.md): the site tokens, a shadow because it floats, no blur.
       var css = document.createElement('style');
       css.textContent =
         '.ugl-read{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483640;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;' +
-        'border-radius:999px;border:1px solid rgba(128,128,128,.45);background:rgba(20,20,22,.92);color:#f2f2f3;font:600 13.5px/1 system-ui,-apple-system,"Segoe UI",sans-serif;' +
-        'cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3);backdrop-filter:blur(6px)}' +
+        'border-radius:999px;border:1px solid var(--u-line-2);background:var(--u-surface-2);color:var(--u-text);font:600 13.5px/1 var(--u-font,system-ui,-apple-system,"Segoe UI",sans-serif);' +
+        'cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:border-color .15s,transform .12s var(--ease-out,ease-out)}' +
         '.ugl-read::before{content:"";width:13px;height:13px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}' +
-        '.ugl-read:hover{border-color:#c2412f}.ugl-read:disabled{opacity:.6;cursor:wait}' +
+        '.ugl-read:hover{border-color:var(--u-text-3)}.ugl-read:active{transform:translateX(-50%) scale(.98)}.ugl-read:disabled{opacity:.6;cursor:wait}' +
         '.ugl-read.is-on{background:#1f3a2b;border-color:#3e7f5c;color:#bfe6cc}.ugl-read.is-on::before{content:"\\2713";border:0;width:auto;height:auto}' +
-        '[data-theme="light"] .ugl-read{background:rgba(251,247,238,.95);color:#2B2620;border-color:rgba(43,38,32,.25)}' +
         '[data-theme="light"] .ugl-read.is-on{background:#e3efe6;color:#2f6b4a;border-color:#3e7f5c}' +
+        '@media(prefers-reduced-motion:reduce){.ugl-read{transition:none}.ugl-read:active{transform:translateX(-50%)}}' +
         '.ugl-toast{bottom:72px!important}@media print{.ugl-read{display:none}}';
       document.head.appendChild(css);
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'ugl-read'; b.disabled = true; b.textContent = 'Mark as read';
       document.body.appendChild(b);
-      var on = false;
+      var on = false, saving = false;
       function show() {
         b.classList.toggle('is-on', on);
         b.textContent = on ? 'Read · mark as unread' : 'Mark as read';
@@ -265,6 +274,18 @@
       db.from('lesson_done').select('module').eq('module', slug).then(function (r) {
         on = !!(r.data && r.data.length); show(); b.disabled = false;
       });
+      // Write the mark (lesson_done) and flip the pill; `said` is the toast for the new state.
+      function save(want, said) {
+        if (saving) return;
+        saving = true; b.disabled = true;
+        var q = want ? db.from('lesson_done').insert({ module: slug }) : db.from('lesson_done').delete().eq('module', slug);
+        q.then(function (r) {
+          saving = false; b.disabled = false;
+          if (r.error && r.error.code !== '23505') { guard.toast('Could not save that. Try again.'); return; }
+          on = want; show();
+          guard.toast(said || (on ? 'Marked as read' : 'Marked as unread'), said ? 3000 : 1600);
+        });
+      }
       b.addEventListener('click', function () {
         var want = !on, dr = window.UGL_DRILLS;
         // A road stop counts as read once its drills are done: that is where the learning is checked.
@@ -273,15 +294,14 @@
           var sec = document.getElementById('drills'); if (sec) sec.scrollIntoView({ behavior: 'smooth' });
           return;
         }
-        b.disabled = true;
-        var q = want ? db.from('lesson_done').insert({ module: slug }) : db.from('lesson_done').delete().eq('module', slug);
-        q.then(function (r) {
-          b.disabled = false;
-          if (r.error && r.error.code !== '23505') { guard.toast('Could not save that. Try again.'); return; }
-          on = want; show();
-          guard.toast(on ? 'Marked as read' : 'Marked as unread', 1600);
-        });
+        save(want);
       });
+      // A finished drill set marks the stop as read by itself (the drill engine calls this with its
+      // result); the pill still works by hand, with the drills gate above.
+      window.uglDrillsDone = function (r) {
+        if (on || saving) return;
+        save(true, 'Drills done: the stop is marked as read');
+      };
     }
 
     // ---- HTML lessons (decks and built pages): replace this page with the lesson.
@@ -295,7 +315,7 @@
       var home = document.querySelector('a.homebtn');
       if (home) home.href = 'index.html#course';
       var sub = document.querySelector('.topbar__sub');
-      if (sub && /ACADEMY/.test(sub.textContent)) sub.textContent = '/ TRAINING COURSE';
+      if (sub && /ACADEMY|Academy|TRAINING COURSE|Training course/.test(sub.textContent)) sub.textContent = '/ Training course';
       protect();
       // Road pages carry "#k=<key>" placeholders; decks build theirs at run time from a URL-encoded stub ("%23k%3D").
       if (item.media || /#k=[\w-]+/.test(html) || /%23k%3D/.test(html)) loadMedia();
@@ -320,9 +340,9 @@
       document.body.className = 'ugl-unlocked';
       document.body.innerHTML =
         '<div class="app-shell"><header class="topbar"><div class="topbar__brand"><img class="topbar__mark" src="assets/unified-logo-icon.png" alt="Unified Service and Consulting">' +
-        '<div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ TRAINING COURSE</span></div></div>' +
+        '<div><span class="topbar__title">DISPATCH</span><span class="topbar__sub">/ Training course</span></div></div>' +
         '<div class="topbar__right"><a class="back" href="index.html#' + item.section + '">← ' + SECTION[item.section] + '</a></div></header>' +
-        '<main class="page page--wide"><section class="page-hero"><div class="eyebrow"><i></i><span id="pdf-k">DOCUMENT</span></div><h1>' + esc(item.title) + '</h1>' +
+        '<main class="page page--wide"><section class="page-hero"><div class="eyebrow"><i></i><span id="pdf-k">Document</span></div><h1>' + esc(item.title) + '</h1>' +
         '<p class="lead">' + esc(item.desc) + '</p></section>' +
         '<div class="pdf-bar"><span id="pdf-pos">Loading pages…</span><div class="pdf-zoom"><button type="button" class="pdf-z" data-z="-1" aria-label="Zoom out">−</button>' +
         '<button type="button" class="pdf-z pdf-z--fit" data-z="0" aria-label="Fit to width"><span id="pdf-pct">100%</span></button>' +
@@ -372,7 +392,7 @@
         return pdfjs.getDocument({ data: new Uint8Array(bytes), standardFontDataUrl: 'vendor/pdfjs/standard_fonts/', isEvalSupported: false }).promise;
       }).then(function (doc) {
         pdf = doc;
-        document.getElementById('pdf-k').textContent = 'DOCUMENT · ' + doc.numPages + (doc.numPages > 1 ? ' PAGES' : ' PAGE');
+        document.getElementById('pdf-k').textContent = 'Document · ' + doc.numPages + (doc.numPages > 1 ? ' pages' : ' page');
         return doc.getPage(1).then(function (p1) {
           var v = p1.getViewport({ scale: 1 });
           for (var i = 1; i <= doc.numPages; i++) {
@@ -389,7 +409,7 @@
       });
     }
 
-    if (!file) { fail('NOT AVAILABLE'); return; }
+    if (!file) { fail('This lesson is not available.'); return; }
 
     db.auth.onAuthStateChange(function (e, s) { if (s) token = s.access_token; });
     db.auth.getSession().then(function (r) {
@@ -405,7 +425,7 @@
         if (/\.pdf$/.test(file)) return blob.arrayBuffer().then(showPdf);
         return blob.text().then(showHtml);
       });
-    }).catch(function (err) { fail(err.message || 'COULD NOT LOAD'); });
+    }).catch(function (err) { fail(err.message || 'Could not load.'); });
   })();
   </script>
 </body>

@@ -36,26 +36,32 @@ window.UGLRoad = (function () {
   }
 
   // ------------------------------------------------------------ message builder: a searchable cheat sheet
+  // The six templates a shift sends most: one tap copies them, before any searching. Ids from messages.json.
+  var MOST = [['to-pu-far', 'Rolling to the shipper'], ['at-pu', 'On site at the shipper'], ['pu-van', 'Pickup email'], ['tr-update', 'Transit update'], ['delivered', 'Delivered'], ['g-pod', 'POD']];
   function builder(D) {
     var root = $('tool'), RECENT = 'ugl-mb-recent';
     function recent() { try { return JSON.parse(sessionStorage.getItem(RECENT) || '[]'); } catch (e) { return []; } }
+    var by = {};
+    D.messages.forEach(function (m) { by[m.id] = m; });
+    function tap(id, label) { return '<button type="button" class="mb__rbtn" data-copy="' + esc(by[id].text) + '" data-mid="' + id + '" title="' + esc(by[id].title) + '">' + esc(label || by[id].title) + '</button>'; }
+    var most = MOST.filter(function (x) { return by[x[0]]; });
     root.innerHTML = '<div class="mb__bar"><input class="search" id="mb-q" type="search" placeholder="Search: traffic, lumper, seal, 150 miles…" autocomplete="off" aria-label="Search messages">' +
       '<div class="mb__chips" id="mb-chips">' + D.groups.map(function (g) { return '<a href="#' + g.id + '" data-g="' + g.id + '">' + esc(g.title) + '</a>'; }).join('') + '</div></div>' +
-      '<div class="mb__recent" id="mb-recent" hidden><small>RECENTLY COPIED</small><span></span></div>' +
+      (most.length ? '<div class="mb__recent mb__most" id="mb-most"><small>Most used</small><span>' + most.map(function (x) { return tap(x[0], x[1]); }).join('') + '</span></div>' : '') +
+      '<div class="mb__recent" id="mb-recent" hidden><small>Recently copied</small><span></span></div>' +
       D.groups.map(function (g) {
         var ms = D.messages.filter(function (m) { return m.group === g.id; });
         return '<section class="mbg" id="' + g.id + '" data-group><h3 class="mbg__h">' + esc(g.title) + '<small>' + ms.length + '</small></h3>' +
-          (g.note ? '<div class="gate"><b>RULE</b><span>' + g.note + '</span></div>' : '') + '<div class="msgs msgs--list">' + ms.map(function (m) { return m.html; }).join('') + '</div></section>';
-      }).join('') + '<p class="empty" id="mb-none" style="display:none">NO MESSAGE MATCHES THAT. TRY ANOTHER WORD, OR ASK YOUR MANAGER.</p>';
-    var cards = [].slice.call(root.querySelectorAll('.msg')), by = {};
-    D.messages.forEach(function (m) { by[m.id] = m; });
+          (g.note ? '<div class="gate"><b>Rule</b><span>' + g.note + '</span></div>' : '') + '<div class="msgs msgs--list">' + ms.map(function (m) { return m.html; }).join('') + '</div></section>';
+      }).join('') + '<p class="empty" id="mb-none" style="display:none">No message matches that. Try another word, or ask your manager.</p>';
+    var cards = [].slice.call(root.querySelectorAll('.msg'));
     function drawRecent() {
       var r = recent().filter(function (id) { return by[id]; }), box = $('mb-recent');
       box.hidden = !r.length;
-      box.querySelector('span').innerHTML = r.map(function (id) { return '<button type="button" class="mb__rbtn" data-copy="' + esc(by[id].text) + '" data-recent="' + id + '">' + esc(by[id].title) + '</button>'; }).join('');
+      box.querySelector('span').innerHTML = r.map(function (id) { return tap(id); }).join('');
     }
     document.addEventListener('ugl-copied', function (e) {
-      var card = e.detail.button.closest('.msg'), id = card ? card.getAttribute('data-msg') : e.detail.button.getAttribute('data-recent');
+      var card = e.detail.button.closest('.msg'), id = card ? card.getAttribute('data-msg') : e.detail.button.getAttribute('data-mid');
       if (!id || !by[id]) return;
       var r = [id].concat(recent().filter(function (x) { return x !== id; })).slice(0, 5);
       try { sessionStorage.setItem(RECENT, JSON.stringify(r)); } catch (x) {}
@@ -65,10 +71,26 @@ window.UGLRoad = (function () {
     searchable($('mb-q'), cards, function (c) { var m = by[c.getAttribute('data-msg')]; return m.title + ' ' + m.when + ' ' + m.text + ' ' + m.find; }, $('mb-none'), function (shown, q) {
       root.querySelectorAll('[data-group]').forEach(function (sec) { sec.hidden = ![].some.call(sec.querySelectorAll('.msg'), function (c) { return !c.hidden; }); });
       $('mb-recent').hidden = !!q || !recent().length;
+      if ($('mb-most')) $('mb-most').hidden = !!q;
+    });
+    // A jump chip lands the group heading just under the sticky search bar. The heading's scroll-margin-top
+    // is set from where the bar sits when stuck (its top offset plus its height), so it holds on every
+    // breakpoint. The hash is replaced, not set, so the page that hosts the tool does not re-route on hashchange.
+    function jump(id, smooth) {
+      var sec = $(id), h = sec && sec.querySelector('.mbg__h'); if (!h) return;
+      var bar = root.querySelector('.mb__bar'), top = bar ? (parseFloat(getComputedStyle(bar).top) || 0) + bar.offsetHeight : 0;
+      if (top) h.style.scrollMarginTop = Math.round(top + 8) + 'px';
+      h.scrollIntoView(smooth ? { behavior: 'smooth', block: 'start' } : { block: 'start' });
+    }
+    $('mb-chips').addEventListener('click', function (e) {
+      var a = e.target.closest('a[data-g]'); if (!a) return;
+      e.preventDefault();
+      jump(a.getAttribute('data-g'), true);
+      try { history.replaceState(null, '', location.href.replace(/#.*$/, '') + '#' + (location.hash.indexOf('#lesson-') === 0 ? location.hash.slice(1).replace(/--.*$/, '') + '--' : '') + a.getAttribute('data-g')); } catch (x) {}
     });
     var a = anchor();
     if (by[a]) flash(root.querySelector('[data-msg="' + a + '"]'));
-    else if (a && $(a)) $(a).scrollIntoView();
+    else if (a && $(a)) jump(a, false);
   }
 
   // ------------------------------------------------------------ EFS request: the format, ready to fill
@@ -88,7 +110,7 @@ window.UGLRoad = (function () {
         '<div class="efs"><div><textarea class="rt-out" id="efs-out" rows="' + (e.lines.length + 1) + '" spellcheck="false" aria-label="EFS request">' + esc(e.lines.join('\n')) + '</textarea>' +
         '<p class="mb__when">Type over the dots here, or copy the format and fill it in the EFS group. Tap a reason to put it in:</p>' +
         '<div class="chipsel">' + e.reasons.map(function (r) { return '<button type="button" data-r="' + esc(r) + '">' + esc(r.length > 54 ? r.slice(0, 52) + '…' : r) + '</button>'; }).join('') + '</div></div>' +
-        '<div>' + proof('BEFORE YOU POST IT', e.proof) + '<div class="rt-bar"><button type="button" class="btn" id="efs-copy">Copy the request</button><button type="button" class="btn btn--ghost" id="efs-reset">Clear</button></div></div></div>';
+        '<div>' + proof('Before you post it', e.proof) + '<div class="rt-bar"><button type="button" class="btn" id="efs-copy">Copy the request</button><button type="button" class="btn btn--ghost" id="efs-reset">Clear</button></div></div></div>';
       var ta = $('efs-out');
       $('efs-copy').addEventListener('click', function () {
         var ticked = [].every.call(root.querySelectorAll('.proof input'), function (c) { return c.checked; });
@@ -160,7 +182,7 @@ window.UGLRoad = (function () {
       },
       wait: function () {
         return '<h2>Wait for the answer</h2><div class="fee-clock"><b data-clock>5:00</b><span></span></div>' +
-          proof('WHEN YOU CALL, THE BROKER MAY ASK', ['Check in time', 'Door #', 'Which stop (DEL 1, DEL 2…)', 'MC # or DOT #', 'The driver\'s phone #']) +
+          proof('When you call, the broker may ask', ['Check-in time', 'Door #', 'Which stop (DEL 1, DEL 2…)', 'MC # or DOT #', 'The driver\'s phone #']) +
           '<h3 class="sub">What did the broker say?</h3>' + pick([['code', 'Here is a money code', 'By email, phone or text to the driver.', '', 'Broker gave a money code'],
             ['paid', 'We will pay the link', 'Send them the link.', '', 'Broker will pay the link'], ['reimb', 'You pay, we reimburse', 'Get it by email.', '', 'Broker asked us to pay and will reimburse'],
             ['efs', 'We can\'t pay it', 'Screenshot their answer.', 'why=cant', 'Broker cannot pay it'], ['noans', 'No answer', 'Called and emailed, nothing.', '', 'Called the broker, no answer']]);
@@ -175,7 +197,7 @@ window.UGLRoad = (function () {
           ['efs', 'We can\'t pay it', 'Screenshot their answer.', 'why=cant', 'Broker cannot pay it']]);
       },
       code: function () {
-        return '<h2>Pay with the money code</h2><label class="field"><label for="fc">PASTE THE CODE</label><input id="fc" data-code autocomplete="off"></label>' +
+        return '<h2>Pay with the money code</h2><label class="field"><label for="fc">Paste the code</label><input id="fc" data-code autocomplete="off"></label>' +
           '<p class="mb__when">Enter it on the link exactly, <b>with no spaces</b>:</p><div class="fee-code" data-clean>—</div>' +
           '<p class="note">Relay: Pay with a check → I Have A Money Code → enter the code → Submit. Fill in the other fields the form asks for.</p>' +
           '<button type="button" class="btn" data-go="receipt" data-log="Paid with the money code">Paid: next, the receipt</button>';
@@ -227,11 +249,11 @@ window.UGLRoad = (function () {
     function draw() {
       var c = D.customers[ci];
       root.innerHTML = tabs(D.customers.map(function (x) { return x.name; }), ci, 'data-c') +
-        '<div class="card"><h3>' + esc(c.name) + ' <small>' + esc(c.what.toUpperCase()) + '</small></h3><ul class="plain plain--doc">' + c.rules.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="card"><h3>' + esc(c.name) + ' <small>' + esc(c.what) + '</small></h3><ul class="plain plain--doc">' + c.rules.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul></div>' +
         '<div class="msgs msgs--list">' + c.cases.map(function (k) {
-          return '<article class="msg msg--broker"><div class="msg__top"><span>TO THE BROKER · EMAIL</span><span class="msg__src">' + esc(k.src) + '</span></div>' +
+          return '<article class="msg msg--broker"><div class="msg__top"><span>To the broker · email</span><span class="msg__src">' + esc(k.src) + '</span></div>' +
             '<div class="msg__head"><h4>' + esc(k.t) + '</h4><button type="button" class="btn msg__copy" data-copy="' + esc(k.copy) + '">Copy</button></div>' +
-            '<div class="msg__text" data-copy-ok>' + k.html + '</div><div class="msg__att"><small>COLLECT</small>' + k.need.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div></article>';
+            '<div class="msg__text" data-copy-ok>' + k.html + '</div><div class="msg__att"><small>Collect</small>' + k.need.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div></article>';
         }).join('') + '</div>';
     }
     root.addEventListener('click', function (e) { var c = e.target.closest('[data-c]'); if (c) { ci = +c.getAttribute('data-c'); draw(); } });
@@ -247,7 +269,7 @@ window.UGLRoad = (function () {
         return '<section class="gl-sec" data-g="' + g + '"><h3 class="sub">' + esc(D.groups[g]) + '</h3><dl class="gloss">' + D.terms.filter(function (x) { return x[2] === g; }).map(function (x) {
           return '<div class="gl-row" data-t="' + esc(x[0] + ' ' + x[1]) + '"><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>';
         }).join('') + '</dl></section>';
-      }).join('') + '</div><p class="empty" id="gl-none" style="display:none">NO WORDS MATCH</p>';
+      }).join('') + '</div><p class="empty" id="gl-none" style="display:none">No word matches that. Try another spelling.</p>';
     var rows = [].slice.call(root.querySelectorAll('.gl-row')), secs = [].slice.call(root.querySelectorAll('.gl-sec'));
     var run = searchable($('gl-q'), rows, function (r) { return r.getAttribute('data-t'); }, null, function () {
       var n = 0;
@@ -319,7 +341,7 @@ window.UGLRoad = (function () {
       }).then(function (j) {
         btn.disabled = false;
         if (j.answer) {
-          ans.innerHTML = '<div class="ask__ans"><div class="ask__who">AI HELPER · FROM THE COURSE ONLY</div><p>' + esc(j.answer).replace(/\n/g, '<br>') + '</p>' +
+          ans.innerHTML = '<div class="ask__ans"><div class="ask__who">AI helper · from the course only</div><p>' + esc(j.answer).replace(/\n/g, '<br>') + '</p>' +
             (j.sources && j.sources.length ? '<p class="ask__src">Read it in: ' + j.sources.map(function (s) { return '<a href="' + esc(s.u) + '">' + esc(s.t) + '</a>'; }).join(' · ') + '</p>' : '') +
             '<p class="ask__foot">Check the stop before you act. The helper can be wrong; the course text is the rule.' + (j.remaining != null ? ' ' + j.remaining + ' questions left today.' : '') + '</p></div>';
         } else {
