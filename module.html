@@ -213,7 +213,7 @@
       var path = packPath('media'), M = window.UGL_IMG || (window.UGL_IMG = {});
       function place() {
         document.querySelectorAll('img').forEach(function (img) {
-          var m = /#k=([\w-]+)$/.exec(img.getAttribute('src') || '');
+          var src = img.getAttribute('src') || '', m = /#k=([\w-]+)$/.exec(src) || /%23k%3D([\w-]+)$/.exec(src);
           if (m && M[m[1]]) img.src = M[m[1]];
         });
       }
@@ -295,7 +295,8 @@
       var sub = document.querySelector('.topbar__sub');
       if (sub && /ACADEMY/.test(sub.textContent)) sub.textContent = '/ TRAINING COURSE';
       protect();
-      if (/#k=[\w-]+/.test(html)) loadMedia();
+      // Road pages carry "#k=<key>" placeholders; decks build theirs at run time from a URL-encoded stub ("%23k%3D").
+      if (item.media || /#k=[\w-]+/.test(html) || /%23k%3D/.test(html)) loadMedia();
       if (deferredVoice) loadNarration();
       // Deep links like module.html?m=email-course#m6: jump to the section once the page has laid out.
       if (location.hash.length > 1) {
