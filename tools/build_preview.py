@@ -93,10 +93,10 @@ PREVIEW = r"""<title>UGL Training Course</title>
 <style>
 /*CSS*/
 /* ---- preview only ---- */
-.pv-bar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:var(--u-red-deep);border-bottom:1px solid rgba(var(--u-red-rgb),.5);
+.pv-bar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:var(--u-acc-deep);border-bottom:1px solid rgba(var(--u-acc-rgb),.5);
   font:500 10.5px var(--u-mono);letter-spacing:.12em;color:var(--u-text-2);text-align:center}
 .pv-bar button{all:unset;cursor:pointer;color:#fff;text-decoration:underline;text-underline-offset:3px}
-.pv-bar button:focus-visible{outline:2px solid var(--u-red-ink)}
+.pv-bar button:focus-visible{outline:2px solid var(--u-acc-ink)}
 .lesson-bar{max-width:1240px;margin:0 auto;padding:22px 34px 0;display:flex;align-items:center;gap:14px}
 .lesson-bar #lesson-mark{position:static;margin-left:auto;flex-shrink:0}
 .lesson-bar>span{font:500 10.5px var(--u-mono);letter-spacing:.14em;color:var(--u-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

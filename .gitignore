@@ -11,3 +11,5 @@ decks/
 UGL-*-Final.html
 
 __pycache__/
+.taste-skill/
+__pycache__/

@@ -140,6 +140,17 @@ it shows what people cannot find in the course. The free Groq tier is shared by 
 1,000 questions a day and a few a minute; Groq states it does not train on API data by default. Only
 course text and the question leave the site, never names or load numbers.
 
+## The course helper (the robot button)
+
+Every page has a robot button at the top right. It opens a panel where a trainee asks a question in
+their own words. The panel answers from the course itself (it searches the same index as the Ask the
+Course tool and links to the stop that covers it) and, on the live site, also asks the AI helper (the
+`ask` function) to explain the answer from those passages only. Without the `GROQ_API_KEY` secret the
+panel shows the course passages and says the helper is off; with it, every question and answer is kept
+in `ask_log`. The index comes through the content gateway like any lesson, so people limited to "Tools
+only" or to picked items need the Ask the Course tool open to them. `DESIGN.md` describes the look of the
+site and the rules behind it.
+
 ## The staging site (checking a branch before main)
 
 A working branch (`claude/...` or `staging/...`) of this repo and of the sources repo is published, on every

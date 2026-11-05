@@ -27,7 +27,7 @@ def shell(title, eyebrow, lead, body, chips=(), script="", toc=None, wide=False,
     toc_html = ""
     if toc:
         # An entry is (id, title) or (id, title, "sub") for a sub-head listed under its part.
-        toc_html = '<aside class="toc"><div class="toc__label">ON THIS PAGE</div>' + "".join(
+        toc_html = '<aside class="toc"><div class="toc__label">On this page</div>' + "".join(
             f'<a href="#{e[0]}"{" class=\"toc__sub\"" if len(e) > 2 else ""}>{esc(e[1])}</a>' for e in toc) + "</aside>"
         body = f'<div class="layout">{toc_html}<div>{body}</div></div>'
     body = before + body
@@ -150,15 +150,15 @@ var pb=document.getElementById('print');if(pb)pb.addEventListener('click',functi
 })();
 </script>""".replace("__KEY__", json.dumps(key))
     body = "".join(parts) + f'<p class="note">{esc(trailer)}</p>'
-    return shell(title, "DISPATCH POLICY", esc(purpose),
-                 body, chips=[f"{n_steps} CHECKPOINTS", "!NO ‘GOOD TO GO’ UNTIL CONFIRMED"], script=script, toc=toc)
+    return shell(title, "Dispatch policy", esc(purpose),
+                 body, chips=[f"{n_steps} checkpoints", "!no ‘Good to Go’ until confirmed"], script=script, toc=toc)
 
 def render_block(b, key, checks):
     k = b[0]
     if k == "p": return f"<p>{esc(b[1])}</p>"
     if k == "sub": return f"<h4>{esc(b[1])}</h4>"
-    if k == "gate": return f'<div class="gate"><b>RULE</b><span>{esc(b[1])}</span></div>'
-    if k == "quote": return f'<div class="quote"><b>{esc(b[1]).upper()}</b>{esc(b[2])}</div>'
+    if k == "gate": return f'<div class="gate"><b>Rule</b><span>{esc(b[1])}</span></div>'
+    if k == "quote": return f'<div class="quote"><b>{esc(b[1])}</b>{esc(b[2])}</div>'
     tag = "ul" if k == "ul" else "ol"
     if checks:
         lis = "".join(f'<li><input type="checkbox" id="c-{slug(key)}-{zlib.crc32(t.encode())}" aria-label="done"><span>{esc(t)}</span></li>' for t in b[1])
@@ -215,8 +215,8 @@ def parse_states():
 def page_axles(rows):
     data = json.dumps(rows)
     body = f"""<input class="search" id="q" type="search" placeholder="Search a state (e.g. TX) or bridge rule…" autocomplete="off" aria-label="Search">
-<div class="tbl-wrap"><table class="tbl" id="t"><thead><tr><th data-k="st">STATE</th><th data-k="single">SINGLE AXLE</th><th data-k="tandem">TANDEM AXLE</th><th data-k="bridge">BRIDGE (53 FT TRAILER)</th></tr></thead><tbody></tbody></table></div>
-<p class="empty" id="none" style="display:none;margin-top:14px">NO STATES MATCH</p>
+<div class="tbl-wrap"><table class="tbl" id="t"><thead><tr><th data-k="st">State</th><th data-k="single">Single axle</th><th data-k="tandem">Tandem axle</th><th data-k="bridge">Bridge (53 ft trailer)</th></tr></thead><tbody></tbody></table></div>
+<p class="empty" id="none" style="display:none;margin-top:14px">No states match</p>
 <p class="note">Interstate system allowable axle weights and bridge settings with 53 ft trailers, in pounds. Maximum combined tractor/semi-trailer weight on the interstate is 80,000 lb. Regardless of the allowable axle weights, you cannot exceed the ratings of the steer tires. Always confirm with the state before a permit-sensitive run.</p>"""
     script = f"""<script>
 (function(){{var D={data},k='st',asc=true,q=document.getElementById('q'),tb=document.querySelector('#t tbody'),none=document.getElementById('none');
@@ -229,8 +229,8 @@ q.addEventListener('input',draw);
 document.querySelectorAll('th[data-k]').forEach(function(th){{th.addEventListener('click',function(){{var n=th.getAttribute('data-k');asc=(k===n)?!asc:true;k=n;draw()}})}});
 draw()}})();
 </script>"""
-    return shell("Axle Weights by State", "WEIGHTS & LIMITS", "Single and tandem axle limits plus bridge settings for 53 ft trailers. Search a state or click a column to sort.",
-                 body, chips=[f"{len(rows)} STATES", "80,000 LB GROSS"], script=script)
+    return shell("Axle Weights by State", "Weights and limits", "Single and tandem axle limits plus bridge settings for 53 ft trailers. Search a state or click a column to sort.",
+                 body, chips=[f"{len(rows)} states", "80,000 lb gross"], script=script)
 
 def page_states(states):
     cards = []
@@ -239,17 +239,17 @@ def page_states(states):
         dl = "".join(f"<dt>{esc(k)}</dt><dd>{esc(f[k])}</dd>" for k in LABELS + [] if k in f and k != "Weight")
         n = s["nums"]
         chips = "".join(f'<div class="stat"><small>{lab}</small><b>{esc(n[key])}</b></div>' for lab, key in
-                        (("GROSS", "gross"), ("SINGLE", "single"), ("TANDEM", "tandem"), ("TRIDEM", "tridem")) if key in n)
+                        (("Gross", "gross"), ("Single", "single"), ("Tandem", "tandem"), ("Tridem", "tridem")) if key in n)
         extra = f'<p class="note">{esc(s["pre"])}</p>' if s["pre"] else ""
         wt = f'<dl class="kv"><dt>Weight</dt><dd>{esc(f["Weight"])}</dd></dl>' if "Weight" in f and not chips else ""
         cards.append(f'<article class="card" data-s="{esc(s["name"].lower())}"><h3>{esc(s["name"])}</h3><div class="chipw">{chips}</div>{wt}<dl class="kv" style="margin-top:12px">{dl}</dl>{extra}</article>')
     body = ('<input class="search" id="q" type="search" placeholder="Search a state…" autocomplete="off" aria-label="Search">'
-            f'<div class="sg">{"".join(cards)}</div><p class="empty" id="none" style="display:none;margin-top:14px">NO STATES MATCH</p>'
+            f'<div class="sg">{"".join(cards)}</div><p class="empty" id="none" style="display:none;margin-top:14px">No states match</p>'
             '<p class="note">Limits as listed in the company reference sheet. Weights are in pounds; “Gross” is the maximum total vehicle weight. Rules change; confirm permit-sensitive moves with the state or the UGL Permit Department. Alaska and Hawaii are not on the source sheet.</p>')
     script = """<script>(function(){var q=document.getElementById('q'),c=[].slice.call(document.querySelectorAll('[data-s]')),n=document.getElementById('none');
 q.addEventListener('input',function(){var t=q.value.trim().toLowerCase(),s=0;c.forEach(function(x){var ok=!t||x.getAttribute('data-s').indexOf(t)!==-1;x.style.display=ok?'':'none';if(ok)s++});n.style.display=s?'none':'block'})})();</script>"""
-    return shell("Legal Limits by State", "WEIGHTS & LIMITS", "Length, overhang, width, height and weight limits for each state. Search to jump to one.",
-                 body, chips=[f"{len(states)} STATES"], script=script)
+    return shell("Legal Limits by State", "Weights and limits", "Length, overhang, width, height and weight limits for each state. Search to jump to one.",
+                 body, chips=[f"{len(states)} states"], script=script)
 
 LEVELS = [
  ("I", "North American Standard Inspection", "The most thorough roadside inspection: driver and vehicle.",
@@ -275,8 +275,8 @@ def page_levels():
                      + (f'<div class="tags">{tags}</div>' if tags else "") + "</article>")
     body = "".join(cards) + ('<p class="note">Source: FMCSA DataQs Help Center, “What is included in each of the Level I–VI inspections?” (printed 2/10/2017). '
                              'Level II lamp items are condensed here; see the full FMCSA text for the exact wording.</p>')
-    return shell("DOT Inspection Levels", "COMPLIANCE & SAFETY", "What an officer examines at each of the six roadside inspection levels. Know what to expect, and what the driver must have ready.",
-                 body, chips=["LEVEL I–VI", "FMCSA"])
+    return shell("DOT Inspection Levels", "Compliance and safety", "What an officer examines at each of the six roadside inspection levels. Know what to expect, and what the driver must have ready.",
+                 body, chips=["levels I–VI", "FMCSA"])
 
 def page_accident():
     body = """<div class="card" id="box"></div><div id="res"></div><div class="trail" id="trail"></div>
@@ -289,7 +289,7 @@ inj:{t:'Was there an injury that required immediate medical attention?',y:'TEST'
 tow:{t:'Did a vehicle receive damage requiring it to be towed from the accident?',y:'TEST',n:'NO'}};
 var box=document.getElementById('box'),res=document.getElementById('res'),trail=document.getElementById('trail'),path=[],n=0;
 function ask(id){box.style.display='';res.innerHTML='';n++;
- box.innerHTML='<div class="q-count">QUESTION '+n+'</div><div class="q">'+Q[id].t+'</div><div class="answers"><button class="btn" data-a="y">Yes</button><button class="btn btn--ghost" data-a="n">No</button></div>';
+ box.innerHTML='<div class="q-count">Question '+n+' of 4</div><div class="q">'+Q[id].t+'</div><div class="answers"><button class="btn" data-a="y">Yes</button><button class="btn btn--ghost" data-a="n">No</button></div>';
  box.querySelectorAll('button').forEach(function(b){b.onclick=function(){var a=b.getAttribute('data-a');path.push([Q[id].t,a==='y'?'Yes':'No']);var nx=Q[id][a];if(Q[nx])ask(nx);else done(nx)}});show()}
 function show(){trail.innerHTML=path.map(function(p){return p[0]+' <b>'+p[1]+'</b>'}).join('<br>')}
 function done(r){box.style.display='none';show();
@@ -299,25 +299,25 @@ function done(r){box.style.display='none';show();
  document.getElementById('again').onclick=function(){path=[];n=0;trail.innerHTML='';ask('fat')}}
 ask('fat')})();
 </script>"""
-    return shell("Post-Accident Test Check", "COMPLIANCE & SAFETY", "Answer up to four questions to find out whether a drug test is required after an accident.",
-                 body, chips=["4 QUESTIONS", "DECISION TOOL"], script=script)
+    return shell("Post-Accident Test Check", "Compliance and safety", "Answer up to four questions to find out whether a drug test is required after an accident.",
+                 body, chips=["4 questions", "decision tool"], script=script)
 
 FIX_WEIGHT_CALC = """<div class="grid2"><div class="card"><h3>Scale ticket</h3><p style="margin:4px 0 14px">Enter the axle weights from the scale ticket (lb).</p>
-<label class="field"><label for="s">STEER</label><input id="s" type="number" inputmode="numeric" value="{s}"></label>
-<label class="field"><label for="d">DRIVE</label><input id="d" type="number" inputmode="numeric" value="{d}"></label>
-<label class="field"><label for="t">TRAILER</label><input id="t" type="number" inputmode="numeric" value="{t}"></label>
-<div class="grid2"><label class="field"><label for="f">FUEL LEVEL (%)</label><input id="f" type="number" inputmode="numeric" value="{f}"></label>
-<label class="field"><label for="g">TANK SIZE (GAL)</label><input id="g" type="number" inputmode="numeric" value="240"></label></div>
-<div class="proof"><h4>THE DRIVER SAYS</h4><label><input type="checkbox" id="nt"> <span>The tandem can't slide (stuck, or already all the way)</span></label>
+<label class="field"><label for="s">Steer</label><input id="s" type="number" inputmode="numeric" value="{s}"></label>
+<label class="field"><label for="d">Drive</label><input id="d" type="number" inputmode="numeric" value="{d}"></label>
+<label class="field"><label for="t">Trailer</label><input id="t" type="number" inputmode="numeric" value="{t}"></label>
+<div class="grid2"><label class="field"><label for="f">Fuel level (%)</label><input id="f" type="number" inputmode="numeric" value="{f}"></label>
+<label class="field"><label for="g">Tank size (gal)</label><input id="g" type="number" inputmode="numeric" value="240"></label></div>
+<div class="proof"><h4>The driver says</h4><label><input type="checkbox" id="nt"> <span>The tandem can't slide (stuck, or already all the way)</span></label>
 <label><input type="checkbox" id="nf"> <span>The fifth wheel can't slide</span></label></div>
 <p class="note no-print">{note}</p></div>
 <div class="card"><h3>Result</h3><div id="out" style="margin-top:12px"></div></div></div>
 """
 FIX_WEIGHT_HOW = """<section class="sec" style="margin-top:34px" id="how"><h2>How it works</h2>
 <div class="grid3">
-<div class="stat"><small>LEGAL LIMITS</small><b>12k · 34k · 34k</b><span>Steer · drive · trailer. Gross 80,000 lb. The steer may go up to 12,400 lb when drive and trailer are at most 34,000 and gross at most 80,000.</span></div>
-<div class="stat"><small>TANDEM</small><b>1 hole = 250 lb</b><span>Forward moves weight from drive to trailer axle.</span></div>
-<div class="stat"><small>FIFTH WHEEL</small><b>1 hole = 500 lb</b><span>Forward moves weight from drive axle to steer.</span></div></div>
+<div class="stat"><small>Legal limits</small><b>12k · 34k · 34k</b><span>Steer · drive · trailer. Gross 80,000 lb. The steer may go up to 12,400 lb when drive and trailer are at most 34,000 and gross at most 80,000.</span></div>
+<div class="stat"><small>Tandem</small><b>1 hole = 250 lb</b><span>Forward moves weight from drive to trailer axle.</span></div>
+<div class="stat"><small>Fifth wheel</small><b>1 hole = 500 lb</b><span>Forward moves weight from drive axle to steer.</span></div></div>
 <div class="card" style="margin-top:16px"><h3>The worked case</h3>
 <ol class="plain"><li>Scale ticket: 11,380 / <b>34,500</b> / 33,640. Drive is 500 lb over the 34,000 limit.</li>
 <li>Tandem 2 holes forward gives 11,380 / 34,000 / <b>34,140</b>. Now the trailer axle is over. Not good.</li>
@@ -349,11 +349,11 @@ function tile(lab,v,lim,warn){var c=v>lim?(warn?'warn':'bad'):'ok';
  return '<div class="stat '+(c==='bad'?'bad-b':'ok-b')+'"><small>'+lab+'</small><b class="'+(c==='warn'?'':c)+'"'+(c==='warn'?' style="color:var(--u-amber)"':'')+'>'+fmt(v)+'</b><span>limit '+fmt(lim)+(warn?' (12,400 allowed here)':'')+'</span></div>'}
 function mv(c){var a=[];if(c.fh)a.push('Fifth wheel '+Math.abs(c.fh)+' hole'+(Math.abs(c.fh)>1?'s':'')+(c.fh>0?' forward':' back'));if(c.th)a.push('Tandem '+Math.abs(c.th)+' hole'+(Math.abs(c.th)>1?'s':'')+(c.th>0?' forward':' back'));return a.join(' + ')||'No move needed'}
 function calc(){var S=num('s'),D=num('d'),T=num('t'),pct=num('f'),tank=num('g')||240,gross=S+D+T,have=pct/100*tank,fuelKnown=$('f').value!=='';
- var h='<div class="grid3" style="margin-bottom:14px">'+tile('STEER',S,L.s,S>L.s&&steerOk(S,D,T))+tile('DRIVE',D,L.d)+tile('TRAILER',T,L.t)+'</div>';
+ var h='<div class="grid3" style="margin-bottom:14px">'+tile('Steer',S,L.s,S>L.s&&steerOk(S,D,T))+tile('Drive',D,L.d)+tile('Trailer',T,L.t)+'</div>';
  if(!fuelKnown)h+='<p class="note" style="margin:-4px 0 12px">Enter the fuel level to get the fuel limit and the burn-fuel option.</p>';
  h+='<p style="margin:-4px 0 12px">Gross: <b class="'+(gross>L.g?'bad':'ok')+'">'+fmt(gross)+' lb</b> (limit 80,000).</p>';
  function block(t,c,burned){var maxGal=have-(burned||0),extra=burned?0:Math.floor(Math.max(0,c.head)/7),max=Math.min(100,Math.floor((maxGal+extra)/tank*100));
-  return '<div class="card" style="margin:0 0 12px"><h3>'+t+'</h3><p style="margin:4px 0 10px"><b>'+mv(c)+'</b></p><div class="chipw"><div class="stat"><small>STEER</small><b>'+fmt(c.s)+'</b></div><div class="stat"><small>DRIVE</small><b>'+fmt(c.d)+'</b></div><div class="stat"><small>TRAILER</small><b>'+fmt(c.t)+'</b></div></div>'
+  return '<div class="card" style="margin:0 0 12px"><h3>'+t+'</h3><p style="margin:4px 0 10px"><b>'+mv(c)+'</b></p><div class="chipw"><div class="stat"><small>Steer</small><b>'+fmt(c.s)+'</b></div><div class="stat"><small>Drive</small><b>'+fmt(c.d)+'</b></div><div class="stat"><small>Trailer</small><b>'+fmt(c.t)+'</b></div></div>'
   +(c.s>L.s?'<p class="note" style="margin-top:8px">Steer '+fmt(c.s)+' lb is allowed: drive and trailer are at most 34,000 and gross at most 80,000 (up to 12,400 lb).</p>':'')
   +(burned?'<p style="margin:10px 0 0">After burning, fuel must stay <b>at or below '+max+'%</b>. Tell the fuel team.</p>'
    :'<p style="margin:10px 0 0">Room: <b>'+fmt(Math.max(0,c.head))+' lb</b> = '+extra+' more gal. Truck has '+fmt(have)+' gal, so fuel must stay <b>at or below '+max+'%</b>.</p>')+'</div>'}
@@ -390,8 +390,8 @@ def fix_weight_widget(s=11380, d=34500, t=33640, f=40, note="Pre-filled with the
 
 def page_fix_weight():
     body, script = fix_weight_widget()
-    return shell("Fix the Weight", "WEIGHTS & LIMITS", "Turn an overweight scale ticket into a fix: how far to slide the tandem and fifth wheel, when to burn fuel, and how much fuel the truck can carry afterwards.",
-                 body + FIX_WEIGHT_HOW, chips=["12-34-34 LIMITS", "STEER UP TO 12,400", "CALCULATOR"], script=script)
+    return shell("Fix the Weight", "Weights and limits", "Turn an overweight scale ticket into a fix: how far to slide the tandem and fifth wheel, when to burn fuel, and how much fuel the truck can carry afterwards.",
+                 body + FIX_WEIGHT_HOW, chips=["12-34-34 limits", "steer up to 12,400", "calculator"], script=script)
 
 # ------------------------------------------------------------ FMCSA summary
 TOC_SCRIPT = """<script>
@@ -465,12 +465,12 @@ def render_fmcsa(path):
     def flat(parts):
         return "".join(f'<ul class="plain plain--doc">{"".join(x)}</ul>' if isinstance(x, list) else x for x in parts)
     words = len(re.sub(r"<[^>]+>", " ", flat(intro) + "".join(flat(s["html"]) for s in secs)).split())
-    keys = "".join(f'<div class="stat"><small>SECTION {sec}</small><b>{esc(v)}</b><span>{esc(l)}</span></div>' for v, l, sec in FMCSA_KEYS)
+    keys = "".join(f'<div class="stat"><small>Section {sec}</small><b>{esc(v)}</b><span>{esc(l)}</span></div>' for v, l, sec in FMCSA_KEYS)
     body = (flat(intro) + f'<section class="sec" id="keys"><h2>Key numbers</h2><div class="keynums">{keys}</div></section>'
             + "".join(f'<section class="sec" id="{s["id"]}">{flat(s["html"])}</section>' for s in secs))
     toc = [("keys", "Key numbers")] + [(s["id"], re.sub(r"\s*\((?:Parts?|Sec\.)[^)]*\)", "", s["label"])) for s in secs]
-    return shell(title, "COMPLIANCE SUMMARY", esc(subtitle) + ". The FMCSA rules a dispatcher needs, from who is covered to hours of service, testing, vehicles, accidents and CSA.",
-                 body, chips=[f"{len(secs)} SECTIONS", f"~{max(1, round(words / 220))} MIN READ", "!STUDY AID, NOT LEGAL ADVICE"], script=TOC_SCRIPT, toc=toc)
+    return shell(title, "Compliance summary", esc(subtitle) + ". The FMCSA rules a dispatcher needs, from who is covered to hours of service, testing, vehicles, accidents and CSA.",
+                 body, chips=[f"{len(secs)} sections", f"{max(1, round(words / 220))} min read", "!study aid, not legal advice"], script=TOC_SCRIPT, toc=toc)
 
 # ------------------------------------------------------- responsibility checklist
 def render_checklist(path):
@@ -494,8 +494,9 @@ def render_checklist(path):
     total = sum(1 for st in stages for b in st["blocks"] if b[0] == "item")
     parts, toc = [], []
     for st in stages:
-        sid = "stage-" + st["n"]; toc.append((sid, f'{st["n"]}. {st["title"]}'))
-        out = [f'<section class="sec" id="{sid}"><div class="card" data-phase><h3>{st["n"]}. {esc(st["title"])}<small data-count></small></h3>']
+        # The stage number is data (the updater works them in order), so it stays, as "Stage 3 · Title" rather than a "3." prefix.
+        sid = "stage-" + st["n"]; toc.append((sid, f'Stage {st["n"]} · {st["title"]}'))
+        out = [f'<section class="sec" id="{sid}"><div class="card" data-phase><h3>Stage {st["n"]} · {esc(st["title"])}<small data-count></small></h3>']
         if st["note"]: out.append(f'<p class="stage-note">When: {esc(st["note"][0].lower() + st["note"][1:])}</p>')
         out.append('<div class="progress"><i></i></div>')
         ul = None
@@ -527,8 +528,8 @@ var top=on;while(top>0&&links[top].classList.contains('toc__sub'))top--;
 links.forEach(function(a,i){a.classList.toggle('is-on',i===on||i===top)})}
 window.addEventListener('scroll',spy,{passive:true});spy();})();
 </script>"""
-    return shell(title, "LOAD UPDATER", "Every step a load updater owns, from the rate confirmation to the completed POD. Work through it for each load, then reset for the next one.",
-                 tools + "".join(parts), chips=[f"{len(stages)} STAGES", f"{total} CHECKPOINTS"], script=script, toc=toc)
+    return shell(title, "Load updater", "Every step a load updater owns, from the rate confirmation to the completed POD. Work through it for each load, then reset for the next one.",
+                 tools + "".join(parts), chips=[f"{len(stages)} stages", f"{total} checkpoints"], script=script, toc=toc)
 
 # ------------------------------------------------------- carrier dispatch email course
 def render_email_course(path):
@@ -553,7 +554,7 @@ def render_email_course(path):
                 cur = None; continue
             m = re.match(r"Module (\d+):\s*(.*)", text)
             if m:
-                cur = {"id": "m" + m.group(1), "label": f"{m.group(1)}. {m.group(2)}", "h": text, "els": []}
+                cur = {"id": "m" + m.group(1), "label": f"Module {m.group(1)} · {m.group(2)}", "h": text, "els": []}
             elif text == "Answer Key":
                 cur = {"id": "answers", "label": None, "h": text, "els": []}
             elif text == "How to Use This Course":
@@ -648,8 +649,10 @@ def render_email_course(path):
     script = TOC_SCRIPT + """<script>(function(){var b=document.getElementById('kc-all');if(!b)return;
 b.addEventListener('click',function(){var all=[].slice.call(document.querySelectorAll('.kc details')),open=all.some(function(d){return !d.open});
 all.forEach(function(d){d.open=open});b.textContent=open?'Hide all answers':'Show all answers'})})();</script>"""
-    return shell(title, "EMAIL COURSE · " + sub.upper(), esc(desc), "".join(parts),
-                 chips=[f"{sum(1 for s_ in sections if s_['id'].startswith('m'))} MODULES", f"~{max(1, round(words / 220))} MIN READ", "KNOWLEDGE CHECK"],
+    # The source prints the subtitle in Title Case ("What to Do, What to Watch For"); the eyebrow is sentence case.
+    sub = sub[:1].upper() + sub[1:].lower()
+    return shell(title, "Email course · " + sub, esc(desc), "".join(parts),
+                 chips=[f"{sum(1 for s_ in sections if s_['id'].startswith('m'))} modules", f"{max(1, round(words / 220))} min read", "knowledge check"],
                  script=script, toc=toc)
 
 # ------------------------------------------------------- email quick answers (tool)
@@ -761,7 +764,7 @@ $('snd-go').addEventListener('click',check);
 snd.addEventListener('keydown',function(e){if(e.key==='Enter')check()});
 })();
 </script>"""
-    return shell("Email Quick Answers", "EMAIL & INBOX", "Type what's happening, or tap a common situation. You get one clear answer.",
+    return shell("Email Quick Answers", "Email and inbox", "Type what's happening, or tap a common situation. You get one clear answer.",
                  body, script=script)
 
 def page_simulator():
@@ -772,9 +775,9 @@ def page_simulator():
     data = js_data(cases)
     body = f'<style>{css}</style><div id="sim"></div>'
     script = f"<script>window.UGL_SIM_CASES={data};</script><script>{js}</script>"
-    return shell("Work Simulator", "PRACTICE", "Handle a real shift: emails from brokers and Telegram messages from drivers arrive one by one. "
+    return shell("Work Simulator", "Practice", "Handle a real shift: emails from brokers and Telegram messages from drivers arrive one by one. "
                  "Choose what to do, write the replies, and get scored against company policy.",
-                 body, chips=[f"{len(cases)} CASES", "GMAIL + TELEGRAM", "SCORED"], script=script, wide=True)
+                 body, chips=[f"{len(cases)} cases", "Gmail + Telegram", "scored"], script=script, wide=True)
 
 # --------------------------------------------------------------------- main
 def page_passages(item_id, title, html_):

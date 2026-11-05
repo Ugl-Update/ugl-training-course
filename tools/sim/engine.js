@@ -14,6 +14,8 @@
   }
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function initials(n) { return n.split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase(); }
+  // Case tags in the source data are written in caps ("DRY VAN"); labels on the page are sentence case.
+  function sentence(s) { s = String(s == null ? '' : s); return s === s.toUpperCase() ? s.charAt(0) + s.slice(1).toLowerCase() : s; }
   function caseMax(c) { return c.steps.reduce(function (n, s) { return n + (s.task.type === 'reply' ? s.task.rubric.length : 1); }, 0); }
   function addMinutes(clock, m) {
     var p = clock.split(':'), t = (+p[0]) * 60 + (+p[1]) + m;
@@ -53,7 +55,7 @@
       var card = h('button', 'sim-case');
       card.type = 'button';
       card.innerHTML =
-        '<div class="sim-case__top"><span class="sim-tag">' + esc(c.tag) + '</span><span class="sim-level">' + esc(c.level) + '</span></div>' +
+        '<div class="sim-case__top"><span class="sim-tag">' + esc(sentence(c.tag)) + '</span><span class="sim-level">' + esc(c.level) + '</span></div>' +
         '<div class="sim-case__title">' + esc(c.title) + '</div>' +
         '<div class="sim-case__sum">' + esc(c.summary) + '</div>' +
         '<div class="sim-case__foot"><span>' + c.steps.length + ' steps · ' + max + ' points</span>' +
@@ -75,12 +77,12 @@
     var ws = h('div', 'sim-ws');
     ws.innerHTML =
       '<aside class="sim-apps"><div class="sim-apps__top"><button type="button" class="sim-back">← All cases</button></div>' +
-      '<div class="sim-app" data-app="email"><div class="sim-app__label"><span class="sim-dot sim-dot--mail"></span>GMAIL</div><div class="sim-threads"></div></div>' +
-      '<div class="sim-app" data-app="telegram"><div class="sim-app__label"><span class="sim-dot sim-dot--tg"></span>TELEGRAM</div><div class="sim-threads"></div></div></aside>' +
+      '<div class="sim-app" data-app="email"><div class="sim-app__label"><span class="sim-dot sim-dot--mail"></span>Gmail</div><div class="sim-threads"></div></div>' +
+      '<div class="sim-app" data-app="telegram"><div class="sim-app__label"><span class="sim-dot sim-dot--tg"></span>Telegram</div><div class="sim-threads"></div></div></aside>' +
       '<section class="sim-main"><header class="sim-head"></header><div class="sim-msgs" aria-live="polite"></div><div class="sim-task"></div></section>' +
-      '<aside class="sim-side"><div class="sim-side__block"><div class="sim-k">CASE</div><div class="sim-side__title"></div></div>' +
-      '<div class="sim-side__block"><div class="sim-k">LOAD BRIEF</div><dl class="sim-brief"></dl></div>' +
-      '<div class="sim-side__block"><div class="sim-k">PROGRESS</div><ol class="sim-steps"></ol><div class="sim-score"></div></div></aside>';
+      '<aside class="sim-side"><div class="sim-side__block"><div class="sim-k">Case</div><div class="sim-side__title"></div></div>' +
+      '<div class="sim-side__block"><div class="sim-k">Load brief</div><dl class="sim-brief"></dl></div>' +
+      '<div class="sim-side__block"><div class="sim-k">Progress</div><ol class="sim-steps"></ol><div class="sim-score"></div></div></aside>';
     root.appendChild(ws);
     window.scrollTo(0, Math.max(0, root.getBoundingClientRect().top + window.scrollY - 90));
     ws.querySelector('.sim-back').addEventListener('click', function () { loadBest().then(showList); });
@@ -119,7 +121,7 @@
   function renderThread() {
     var k = S.active, ct = contact(k), t = S.threads[k], app = ct.channel;
     S.ws.querySelector('.sim-head').innerHTML = '<span class="sim-av sim-av--' + app + '">' + esc(initials(ct.name)) + '</span><div><b>' + esc(ct.name) + '</b><small>' +
-      esc(ct.role) + (ct.address ? ' · ' + esc(ct.address) : '') + '</small></div><span class="sim-app-chip">' + (app === 'email' ? 'GMAIL' : 'TELEGRAM') + '</span>';
+      esc(ct.role) + (ct.address ? ' · ' + esc(ct.address) : '') + '</small></div><span class="sim-app-chip">' + (app === 'email' ? 'Gmail' : 'Telegram') + '</span>';
     var box = S.ws.querySelector('.sim-msgs');
     box.className = 'sim-msgs sim-msgs--' + app;
     box.innerHTML = t.msgs.length ? '' : '<p class="sim-empty">No messages yet.</p>';
@@ -145,7 +147,7 @@
       var r = S.log[i], cls = i === S.i && !S.done ? 'is-now' : r ? (r.got === r.of ? 'is-ok' : 'is-part') : '';
       return '<li class="' + cls + '"><span>' + esc(st.task.q) + '</span>' + (r ? '<b>' + r.got + '/' + r.of + '</b>' : '') + '</li>';
     }).join('');
-    S.ws.querySelector('.sim-score').innerHTML = '<span>SCORE</span><b>' + S.earned + '</b><span>/ ' + S.max + '</span>';
+    S.ws.querySelector('.sim-score').innerHTML = '<span>Score</span><b>' + S.earned + '</b><span>/ ' + S.max + '</span>';
   }
 
   function deliver(msg) {
@@ -166,7 +168,7 @@
 
   function renderTask() {
     var st = S.c.steps[S.i], t = st.task, box = S.ws.querySelector('.sim-task');
-    box.innerHTML = '<div class="sim-task__label">YOUR MOVE · STEP ' + (S.i + 1) + ' OF ' + S.c.steps.length + '</div><div class="sim-task__q">' + esc(t.q) + '</div>';
+    box.innerHTML = '<div class="sim-task__label">Your move · step ' + (S.i + 1) + ' of ' + S.c.steps.length + '</div><div class="sim-task__q">' + esc(t.q) + '</div>';
     if (t.type === 'choice') {
       var list = h('div', 'sim-opts');
       t.options.forEach(function (o, j) {
@@ -187,7 +189,7 @@
         '<div class="sim-compose__to">' + (isMail ? 'To: <b>' + esc(ct.name) + '</b> &lt;' + esc(ct.address || '') + '&gt;' : 'Telegram to <b>' + esc(ct.name) + '</b>') + '</div>' +
         (isMail ? '<input class="sim-in" id="sim-subj" placeholder="Subject" autocomplete="off">' : '') +
         '<textarea class="sim-in" id="sim-body" rows="' + (isMail ? 7 : 4) + '" placeholder="' + (isMail ? 'Write your email…' : 'Write a message…') + '"></textarea>' +
-        (files.length ? '<div class="sim-attach"><span>ATTACH</span>' + files.map(function (id) {
+        (files.length ? '<div class="sim-attach"><span>Attach</span>' + files.map(function (id) {
           return '<label class="sim-chip"><input type="checkbox" value="' + esc(id) + '"><span>📎 ' + esc(S.files[id].name) + '</span></label>';
         }).join('') + '</div>' : '') +
         '<div class="sim-compose__row"><button class="sim-btn" type="submit">Send</button><span class="sim-hint">Re-read any message from the list on the left. Graded after you send.</span></div>';

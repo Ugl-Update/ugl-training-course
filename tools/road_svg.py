@@ -49,16 +49,16 @@ def axles():
     # Fifth wheel plate and tandem slider rails.
     b += [box(500, 176, 70, 8, "dg-slider", 2), box(120, 176, 110, 8, "dg-slider", 2)]
     # Weight labels under each axle group.
-    b += [lines(690, g + 30, ["STEER", "12,000 lb", "up to 12,400 when the", "other axles are legal"], "dg-t", size=12, lh=15),
-          lines(529, g + 30, ["DRIVE", "34,000 lb"], "dg-t", size=12, lh=15),
-          lines(171, g + 30, ["TRAILER", "34,000 lb"], "dg-t", size=12, lh=15),
-          text(320, g + 45, "GROSS (all axles together): 80,000 lb", "dg-m", size=12)]
+    b += [lines(690, g + 30, ["Steer", "12,000 lb", "up to 12,400 when the", "other axles are legal"], "dg-t", size=12, lh=15),
+          lines(529, g + 30, ["Drive", "34,000 lb"], "dg-t", size=12, lh=15),
+          lines(171, g + 30, ["Trailer", "34,000 lb"], "dg-t", size=12, lh=15),
+          text(320, g + 45, "Gross (all axles together): 80,000 lb", "dg-m", size=12)]
     # Slide arrows and what each one does.
     b += [arrow(535, 40, 605, 40, "dg-a-l"), arrow(535, 40, 465, 40, "dg-a-l"),
-          text(535, 26, "5TH WHEEL · 1 hole = 500 lb", "dg-a", size=12, weight="700"),
+          text(535, 26, "5th wheel · 1 hole = 500 lb", "dg-a", size=12, weight="700"),
           lines(535, 56, ["forward: steer heavier, drive lighter"], "dg-m", size=11),
           arrow(175, 40, 245, 40, "dg-a-l"), arrow(175, 40, 105, 40, "dg-a-l"),
-          text(175, 26, "TANDEM · 1 hole = 250 lb", "dg-a", size=12, weight="700"),
+          text(175, 26, "Tandem · 1 hole = 250 lb", "dg-a", size=12, weight="700"),
           lines(175, 56, ["forward: trailer heavier, drive lighter", "backward: trailer lighter, drive heavier"], "dg-m", size=11, lh=13)]
     b += [text(350, 120, "A slide moves weight from one axle to the next. The gross never changes.", "dg-t", size=13, weight="600"),
           text(350, 140, "Only burning fuel (7 lb a gallon, by the drive axle) makes the truck lighter.", "dg-m", size=12)]
@@ -87,7 +87,7 @@ def pallets():
             for r in range(3):
                 out.append(pal(x0 + 8, 58 + r * 54)); out.append(pal(x0 + 70, 58 + r * 54))
             out.append(box(x0 + 128, 58, 16, 154, "dg-gap", 2))
-            out.append(text(x0 + 136, 140, "AIR", "dg-a", size=9, weight="700", extra=' transform="rotate(-90 ' + str(x0 + 136) + ' 140)"'))
+            out.append(text(x0 + 136, 140, "air", "dg-a", size=9, weight="700", extra=' transform="rotate(-90 ' + str(x0 + 136) + ' 140)"'))
         elif kind == "turn":
             for r in range(3):
                 out.append(pal(x0 + 8, 58 + r * 54, 65, 46)); out.append(pal(x0 + 77, 58 + r * 54, 65, 46))
@@ -119,24 +119,23 @@ def reefer_panel():
             text(210, 196, "STATUS OK", "dg-screen-t", "middle", 12, "700")]
     out += [f'<circle cx="400" cy="60" r="9" class="dg-lamp-off"/>', text(400, 90, "ALARM", "dg-m", size=10),
             box(380, 110, 60, 26, "dg-btn", 5), text(410, 128, "START/STOP", "dg-m", size=8), box(380, 146, 60, 26, "dg-btn", 5), text(410, 164, "CONTINUOUS", "dg-m", size=8)]
-    # Callouts (numbered) pointing at the five things to read.
-    call = [(1, 100, 84, "MODE: must match the BOL / RC", 95, 38), (2, 150, 172, "BOX TEMP: inside the trailer now", 120, 230),
-            (3, 268, 172, "SET POINT: what the unit is set to", 300, 230), (4, 400, 60, "ALARM lamp: must be off", 560, 60),
-            (5, 210, 196, "STATUS note: read it, ask maintenance", 560, 200)]
-    for n, px, py, label, lx, ly in call:
+    # Callouts (numbered) pointing at the five things to read. The screen's own words above stay as the unit prints them;
+    # the course's labels are sentence case.
+    call = [(1, 100, 84, 95, 38), (2, 150, 172, 120, 230), (3, 268, 172, 300, 230), (4, 400, 60, 560, 60), (5, 210, 196, 560, 200)]
+    for n, px, py, lx, ly in call:
         out.append(f'<line x1="{px}" y1="{py}" x2="{lx}" y2="{ly}" class="dg-a-thin"/>')
         out.append(f'<circle cx="{lx}" cy="{ly}" r="11" class="dg-badge"/>' + text(lx, ly + 4, str(n), "dg-badge-t", size=11, weight="700"))
-    out += [text(580, 64, "ALARM lamp: must be off", "dg-t", "start", 12), text(580, 204, "STATUS note: read it,", "dg-t", "start", 12),
+    out += [text(580, 64, "Alarm lamp: must be off", "dg-t", "start", 12), text(580, 204, "Status note: read it,", "dg-t", "start", 12),
             text(580, 219, "ask maintenance if unsure", "dg-m", "start", 11),
-            text(95, 42, "MODE: must match the BOL / RC", "dg-t", "start", 11), text(120, 244, "BOX TEMP: inside now", "dg-t", size=11),
-            text(300, 244, "SET POINT: the setting", "dg-t", size=11)]
+            text(95, 42, "Mode: must match the BOL / RC", "dg-t", "start", 11), text(120, 244, "Box temp: inside now", "dg-t", size=11),
+            text(300, 244, "Set point: the setting", "dg-t", size=11)]
     # Thermo King variant: mode is a lit button.
     out += [box(500, 100, 240, 90, "dg-panel", 10), box(520, 112, 140, 66, "dg-screen", 6),
             text(560, 150, "-9.8", "dg-screen-t", "middle", 24, "800"), text(625, 150, "-10", "dg-screen-t", "middle", 15, "700"),
             text(590, 170, "box · set point", "dg-screen-m", "middle", 9),
             box(672, 118, 56, 24, "dg-btn-lit", 5), text(700, 134, "CONT", "dg-badge-t", size=9, weight="700"),
             box(672, 150, 56, 24, "dg-btn", 5), text(700, 166, "START/STOP", "dg-m", size=7.5),
-            text(620, 92, "THERMO KING: the lit button is the mode", "dg-m", size=11)]
+            text(620, 92, "Thermo King: the lit button is the mode", "dg-m", size=11)]
     return svg(262, "".join(out), "A reefer control panel: mode top left, big box temperature, small set point, the alarm lamp and the status line")
 
 
@@ -151,7 +150,7 @@ def update_tree(part="both"):
     def leaf(x, y, w, title, msg):
         return box(x, y, w, 52, "dg-leaf", 8) + text(x + w / 2, y + 20, title, "dg-t", size=12, weight="700") + text(x + w / 2, y + 38, msg, "dg-a", size=11)
     if part == "shipper":
-        out.append(node(280, y0, 200, 44, "On the way to the SHIPPER", "never the current location"))
+        out.append(node(280, y0, 200, 44, "On the way to the shipper", "never the current location"))
         out.append(arrow(380, y0 + 44, 200, 100)); out.append(arrow(380, y0 + 44, 560, 100))
         out.append(node(120, 100, 160, 36, "Rolling")); out.append(node(480, 100, 160, 36, "Stopped"))
         out.append(arrow(200, 136, 110, 180)); out.append(arrow(200, 136, 290, 180))
@@ -162,7 +161,7 @@ def update_tree(part="both"):
         out.append(leaf(470, 180, 230, "___ miles from the shipper", "waiting till the appointment time"))
         out.append(text(W / 2, 262, "On time and the broker asks? \"We will pick up on time.\"", "dg-m", size=12))
         return svg(275, "".join(out), "Which update on the way to the shipper: rolling more or less than 50 miles, or stopped near the shipper")
-    out.append(node(280, y0, 200, 44, "On the way to the RECEIVER", "with the current location"))
+    out.append(node(280, y0, 200, 44, "On the way to the receiver", "with the current location"))
     out.append(arrow(380, y0 + 44, 140, 100)); out.append(arrow(380, y0 + 44, 380, 100)); out.append(arrow(380, y0 + 44, 620, 100))
     out.append(text(230, 80, "> 200 mi", "dg-m", size=11)); out.append(text(405, 80, "< 200 mi, rolling", "dg-m", "start", 11)); out.append(text(520, 80, "< 200 mi, stopped", "dg-m", size=11))
     out.append(leaf(40, 100, 200, "The usual update", "Current location · Status"))
@@ -209,7 +208,7 @@ def fee_flow():
 def routes(cases):
     out, y = [], 10
     for title, steps in cases:
-        out.append(text(20, y + 16, title.upper(), "dg-a", "start", 11, "700"))
+        out.append(text(20, y + 16, title, "dg-a", "start", 11, "700"))
         n = len(steps)
         gap = (W - 60) / max(1, n - 1) if n > 1 else 0
         for i, (place, what) in enumerate(steps):
@@ -222,7 +221,7 @@ def routes(cases):
             keep = "load out" in low or "keep" in low
             cls = "dg-trl-loaded" if loaded else "dg-trl-keep" if keep else "dg-trl-empty"
             out.append(box(cx - 22, cy - 14, 44, 28, cls, 3) + f'<circle cx="{cx - 10}" cy="{cy + 16}" r="4" class="dg-hub"/><circle cx="{cx + 10}" cy="{cy + 16}" r="4" class="dg-hub"/>')
-            tag = "DROP" if low.startswith("drop") else "HOOK" if low.startswith("hook") or "hook" in low else "UNLOAD" if "unload" in low else "LOAD" if "loaded" in low or "load" in low else ""
+            tag = "Drop" if low.startswith("drop") else "Hook" if low.startswith("hook") or "hook" in low else "Unload" if "unload" in low else "Load" if "loaded" in low or "load" in low else ""
             if tag: out.append(text(cx, cy - 20, tag, "dg-a", size=9, weight="700"))
             out.append(text(cx, cy + 40, place, "dg-t", size=12, weight="700"))
             out.append(lines(cx, cy + 56, _wrap(what, 20), "dg-m", size=10.5, lh=12))
@@ -247,8 +246,8 @@ def _wrap(s, n):
 
 # ------------------------------------------------------------------ 7. the four time zones
 def zones():
-    Z = [("PACIFIC", "PT", "9:00 AM", ["Los Angeles", "Seattle", "Las Vegas"]), ("MOUNTAIN", "MT", "10:00 AM", ["Denver", "Phoenix*", "Salt Lake City"]),
-         ("CENTRAL", "CT", "11:00 AM", ["Chicago", "Dallas", "Kansas City"]), ("EASTERN", "ET", "12:00 PM", ["New York", "Atlanta", "Miami"])]
+    Z = [("Pacific", "PT", "9:00 AM", ["Los Angeles", "Seattle", "Las Vegas"]), ("Mountain", "MT", "10:00 AM", ["Denver", "Phoenix*", "Salt Lake City"]),
+         ("Central", "CT", "11:00 AM", ["Chicago", "Dallas", "Kansas City"]), ("Eastern", "ET", "12:00 PM", ["New York", "Atlanta", "Miami"])]
     out = []
     bw = (W - 40) / 4
     for i, (name, ab, t, cities) in enumerate(Z):
@@ -274,8 +273,8 @@ def interstates():
         out.append(box(x - 21, 40, 42, 20, "dg-shield-odd", 4) + text(x, 54, name, "dg-shield-t", size=10.5, weight="700"))
     out.append(text(W / 2, 20, "N", "dg-m", size=11, weight="700"))
     out.append(text(40, 150, "W", "dg-m", size=11, weight="700")); out.append(text(720, 150, "E", "dg-m", size=11, weight="700"))
-    out.append(text(W / 2, 284, "EVEN numbers run east–west and grow from south (I-10) to north (I-90).", "dg-t", size=12.5, weight="600"))
-    out.append(text(W / 2, 302, "ODD numbers run north–south and grow from west (I-5) to east (I-95).", "dg-t", size=12.5, weight="600"))
+    out.append(text(W / 2, 284, "Even numbers run east–west and grow from south (I-10) to north (I-90).", "dg-t", size=12.5, weight="600"))
+    out.append(text(W / 2, 302, "Odd numbers run north–south and grow from west (I-5) to east (I-95).", "dg-t", size=12.5, weight="600"))
     return svg(314, "".join(out), "A simple grid of interstates: even numbers run east to west, odd numbers north to south")
 
 

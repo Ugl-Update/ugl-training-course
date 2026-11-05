@@ -147,7 +147,7 @@ async function accessProblem(stage: Stage, limit: { mode: string; items: string[
   const it = items.get(module);
   if (!it) return "no-access";
   // A page's packs live under audio/ and media/ by file name: pages/road-3a.html -> media/road-3a.pack.
-  const expected = part === "main" ? it.path : part + "/" + it.path.replace(/^.*\//, "").replace(/\.html$/, ".pack");
+  const expected = part === "main" ? it.path : part === "index" ? "ask/index.json" : part + "/" + it.path.replace(/^.*\//, "").replace(/\.html$/, ".pack");
   if (path !== expected) return "no-access";
   if (limit.mode === "tools") return it.section === "tools" ? null : "no-access";
   return (limit.items || []).includes(it.id) ? null : "no-access";
@@ -206,8 +206,9 @@ Deno.serve(async (req) => {
 
   if (body.action !== "open") return json({ error: "bad-request" }, 400);
   const path = String(body.path || "");
-  // A page may fetch two side files after itself: its narration (audio/) and its pictures (media/).
-  const part = ["audio", "media"].includes(body.part) ? body.part : "main";
+  // A page may fetch side files after itself: its narration (audio/), its pictures (media/); the course helper
+  // fetches the Ask tool's index (part "index").
+  const part = ["audio", "media", "index"].includes(body.part) ? body.part : "main";
   if (!SAFE_PATH.test(path) || path.includes("..")) return json({ error: "bad-request" }, 400);
 
   // Decide what to refuse outright, and what only to flag for the admin.
@@ -240,7 +241,7 @@ Deno.serve(async (req) => {
 
   const { data: verdict, error } = await db.rpc("gateway_open", {
     p_user: user.id, p_module: body.module ? String(body.module) : null, p_path: path, p_part: part,
-    p_ip: ip, p_ua: ua, p_signals: signals, p_block: block, p_flags: flags,
+    p_ip: ip, p_ua: ua, p_signals: signals, p_block: block, p_flags: flags, p_bucket: STAGES[stage].bucket,
   });
   if (error || !verdict) return json({ error: "server" }, 500);
   if (!verdict.allowed) {
