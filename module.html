@@ -177,6 +177,8 @@
     // header length, a JSON header {key: [offset, length, mime?]}, then the blobs back to back.
     // Fills `into` with an object URL per key and resolves with it; `mime` is for entries whose
     // header carries none.
+    // A page's pack lives next to the others under audio/ or media/ by file name (pages/road-3a.html -> media/road-3a.pack).
+    function packPath(kind) { return kind + '/' + file.replace(/^.*\//, '').replace(/\.html$/, '.pack'); }
     function readPack(blob, into, mime) {
       return blob.slice(0, 4).arrayBuffer().then(function (b) {
         var n = new DataView(b).getUint32(0, true);
@@ -193,7 +195,7 @@
     // ---- Narration for decks built by tools/build_decks.py: the slides show first, the voice
     // pack follows (audio/<deck>.pack: an MP3 per clip id, into window.UGL_AUDIO).
     function loadNarration() {
-      var path = 'audio/' + file.replace(/\.html$/, '.pack');
+      var path = packPath('audio');
       guard.toast('Loading narration…', 0);
       getFile(path, 'audio', function (p) { guard.toast('Loading narration… ' + Math.round(p * 100) + '%', 0); }).then(function (blob) {
         return readPack(blob, window.UGL_AUDIO || (window.UGL_AUDIO = {}), 'audio/mpeg');
@@ -208,7 +210,7 @@
     // Decks read window.UGL_IMG for slides they draw later.
     var mediaEarly = null;  // the pack's download, started with the page for items the catalog marks media: true
     function loadMedia() {
-      var path = 'media/' + file.replace(/\.html$/, '.pack'), M = window.UGL_IMG || (window.UGL_IMG = {});
+      var path = packPath('media'), M = window.UGL_IMG || (window.UGL_IMG = {});
       function place() {
         document.querySelectorAll('img').forEach(function (img) {
           var m = /#k=([\w-]+)$/.exec(img.getAttribute('src') || '');
@@ -395,7 +397,7 @@
       name = email.slice(-dom.length) === dom ? email.slice(0, -dom.length) : email;
       sig = guard.signals();
       var fill = document.getElementById('fill');
-      if (item.media) { mediaEarly = getFile('media/' + file.replace(/\.html$/, '.pack'), 'media'); mediaEarly.catch(function () {}); }
+      if (item.media) { mediaEarly = getFile(packPath('media'), 'media'); mediaEarly.catch(function () {}); }
       return getFile(file, 'main', function (p) { fill.style.width = p * 100 + '%'; }).then(function (blob) {
         if (/\.pdf$/.test(file)) return blob.arrayBuffer().then(showPdf);
         return blob.text().then(showHtml);

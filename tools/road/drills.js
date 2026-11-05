@@ -30,7 +30,7 @@ window.UGLRoadDrills = function () {
     function tick() {
       var max = document.documentElement.scrollHeight - window.innerHeight, pct = max > 0 ? Math.min(100, Math.round(window.scrollY / max * 100)) : 0, cur = '';
       t.style.top = bar.offsetHeight + 'px';
-      parts.forEach(function (h) { if (h.getBoundingClientRect().top <= 200) cur = h.textContent.replace(/^\d+\s*/, ''); });
+      parts.forEach(function (h) { var r = h.getBoundingClientRect(); if (r.height && r.top <= 200) cur = h.textContent.replace(/^\d+\s*/, ''); });
       fill.style.width = pct + '%';
       label.textContent = (mile ? 'STOP ' + mile.textContent + ' · ' : '') + (cur ? cur.toUpperCase() + ' · ' : '') + pct + '%';
     }

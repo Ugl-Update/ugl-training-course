@@ -135,7 +135,8 @@ async function accessProblem(limit: { mode: string; items: string[] }, module: s
   if (!items) return "no-access";
   const it = items.get(module);
   if (!it) return "no-access";
-  const expected = part === "main" ? it.path : part + "/" + it.path.replace(/\.html$/, ".pack");
+  // A page's packs live under audio/ and media/ by file name: pages/road-3a.html -> media/road-3a.pack.
+  const expected = part === "main" ? it.path : part + "/" + it.path.replace(/^.*\//, "").replace(/\.html$/, ".pack");
   if (path !== expected) return "no-access";
   if (limit.mode === "tools") return it.section === "tools" ? null : "no-access";
   return (limit.items || []).includes(it.id) ? null : "no-access";

@@ -288,15 +288,15 @@ def shipper_clock():
         x = x0 + (x1 - x0) * h / 4.5
         out.append(f'<line x1="{x}" y1="{y - 8}" x2="{x}" y2="{y + 8}" class="dg-l"/>'); out.append(text(x, y + 26, f"{h} h", "dg-m", size=11))
     marks = [(0, "Check in", ["help with the PU#", "tell the broker: on site"], "dg-badge"), (2, "Ask the driver", ["a door? being loaded?", "keep the broker posted"], "dg-badge"),
-             (3.5, "Push the broker", ["email, then call:", "help speed up the loading"], "dg-badge"), (4, "Detention", ["times on the BOL,", "tell the broker"], "dg-badge-red")]
+             (3.5, "Email, then call", ["the broker: help", "speed up the loading"], "dg-badge"), (4, "Detention", ["times on the BOL,", "tell the broker"], "dg-badge-red")]
     for h, t, sub, cls in marks:
         x = x0 + (x1 - x0) * h / 4.5
         out.append(f'<circle cx="{x}" cy="{y}" r="9" class="{cls}"/>')
         ty = 40 if h != 3.5 else 118
         out.append(text(x, ty - 14 if h != 3.5 else ty, t, "dg-t", size=12.5, weight="700"))
         out.append(lines(x, (ty + 2) if h != 3.5 else ty + 16, sub, "dg-m", size=10.5, lh=12))
-    out.append(text(W / 2, 170, "Count from the check-in time. Detention only when the appointment is not FCFS; on FCFS loads keep pushing, no detention.", "dg-t", size=12))
-    return svg(184, "".join(out), "The shipper clock: check in at 0, ask the driver at 2 hours, push the broker at 3 to 4 hours, detention from 4 hours on loads that are not FCFS")
+    out.append(text(W / 2, 170, "Count from the check-in time. Detention only when the appointment is not FCFS; on FCFS loads keep emailing and calling, no detention.", "dg-t", size=12))
+    return svg(184, "".join(out), "The shipper clock: check in at 0, ask the driver at 2 hours, email then call the broker at 3 to 4 hours, detention from 4 hours on loads that are not FCFS")
 
 
 # ------------------------------------------------------------------ 10. where the pulp goes

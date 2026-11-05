@@ -792,8 +792,11 @@ def main():
         Road(SRC, (ROOT / "ugl-catalog.js").read_text(encoding="utf-8"), shell, TOC_SCRIPT, widgets={"fix-the-weight": ("", "")})
         print("sources/road: ok"); return
     if OUT.exists():
-        for sub in ("pages", "files", "media", "ask"):
+        for sub in ("pages", "files", "ask"):
             shutil.rmtree(OUT / sub, ignore_errors=True)
+        # media/ also holds the decks' picture packs (build_decks.py): clear only the road's own packs.
+        for p in (OUT / "media").glob("road-*.pack"):
+            p.unlink()
     for sub in ("pages", "files", "media", "ask"):
         (OUT / sub).mkdir(parents=True, exist_ok=True)
     def w(path, content):
