@@ -102,6 +102,13 @@
       '<span class="lcard__icon">' + icon(it) + '</span><span class="lcard__body"><span class="lcard__top"><span class="lcard__tag"></span><span class="lcard__state"></span></span>' +
       '<span class="lcard__title"></span><span class="lcard__desc"></span></span>' + (it.soon ? '' : '<span class="lcard__arrow" aria-hidden="true">→</span>'));
     txt(a, '.lcard__tag', it.tag); txt(a, '.lcard__title', it.title); txt(a, '.lcard__desc', it.desc);
+    if (it.kind === 'stop') {
+      // The stop page keeps the trainee's best drill score in this browser; show it on the road.
+      try {
+        var best = JSON.parse(localStorage.getItem('ugl-drills:' + it.id) || 'null');
+        if (best && best.n) { var m = el('span', 'lcard__meta'); m.textContent = 'DRILLS · BEST ' + best.right + ' OF ' + best.n; a.querySelector('.lcard__body').appendChild(m); }
+      } catch (e) {}
+    }
     a._item = it;
     a._hay = (it.title + ' ' + it.desc + ' ' + it.tag).toLowerCase();
     wrap.appendChild(a);
@@ -200,20 +207,21 @@
     find.setAttribute('aria-label', 'Search the course'); find.autocomplete = 'off';
     v.appendChild(find);
     var tracks = el('div', ''); tracks.id = 'tracks';
-    var shown = cat.tracks.filter(function (t) { return ITEMS.some(function (i) { return i.section === 'course' && i.track === t.id; }); });
-    var libHead = false;
-    shown.forEach(function (t, ti) {
-      var items = ITEMS.filter(function (i) { return i.section === 'course' && i.track === t.id; });
-      if (t.library && !libHead && shown.some(function (x) { return !x.library; })) {
-        libHead = true;
+    // The road comes first; every other track is the Library, under one heading (when both exist).
+    var shown = cat.tracks.map(function (t) { return { t: t, items: ITEMS.filter(function (i) { return i.section === 'course' && i.track === t.id; }) }; })
+      .filter(function (x) { return x.items.length; });
+    var hasRoad = shown.some(function (x) { return x.t.road; });
+    shown.forEach(function (x, ti) {
+      var t = x.t;
+      if (!t.road && hasRoad && !tracks.querySelector('.lib-head')) {
         tracks.appendChild(el('div', 'lib-head', '<h2>Library</h2><p>The decks, policies and compliance files the road links to. Open them any time; they count toward your progress too.</p>'));
       }
       var sec = el('section', 'track' + (t.road ? ' track--road' : ''), '<div class="track__head"><div class="track__num"></div><div class="track__text"><h2 class="track__title"></h2><p class="track__desc"></p></div>' +
         '<div class="track__prog"><span></span><div class="progress"><i></i></div></div></div>');
-      sec.id = 'track-' + t.id; sec._items = items.filter(function (i) { return !i.soon; });
+      sec.id = 'track-' + t.id; sec._items = x.items.filter(function (i) { return !i.soon; });
       txt(sec, '.track__num', String(ti + 1).padStart(2, '0'));
       txt(sec, '.track__title', t.title); txt(sec, '.track__desc', t.desc);
-      sec.appendChild(t.road ? road(items) : grid(items));
+      sec.appendChild(t.road ? road(x.items) : grid(x.items));
       tracks.appendChild(sec);
     });
     v.appendChild(tracks);
@@ -224,8 +232,8 @@
       tracks.querySelectorAll('.track').forEach(function (sec) {
         var any = 0;
         sec.querySelectorAll('.lcard').forEach(function (c) {
-          var ok = !q || c._hay.indexOf(q) !== -1; c.hidden = !ok; c.parentNode.hidden = !ok;
-          if (c.parentNode.parentNode.classList.contains('road__stop')) c.parentNode.parentNode.hidden = !ok;
+          var ok = !q || c._hay.indexOf(q) !== -1;
+          c.closest('.road__stop, .lcard-wrap').hidden = !ok;
           if (ok) any++;
         });
         sec.hidden = !any; shown += any;
@@ -348,7 +356,10 @@
     try {
       if (!window.caches) return;
       var keep = {};
-      ITEMS.forEach(function (it) { keep[it.path] = 1; keep['audio/' + it.path.replace(/\.html$/, '.pack')] = 1; });
+      ITEMS.forEach(function (it) {
+        keep[it.path] = 1;
+        ['audio', 'media'].forEach(function (p) { keep[p + '/' + it.path.replace(/\.html$/, '.pack')] = 1; });
+      });
       caches.open('ugl-content-v1').then(function (c) {
         return c.keys().then(function (ks) {
           ks.forEach(function (k) {
@@ -373,11 +384,19 @@
   window.uglOnSignedIn = function (user) {
     // Keep the menu out of sight until we know what this person may open, so nothing flashes up.
     portal.style.visibility = $('tabs').style.visibility = 'hidden';
-    (env.loadAccess ? env.loadAccess(user) : Promise.resolve(null)).then(function (access) {
-      applyAccess(access); build(); setUser(user); refresh(); loadProgress(); pruneCache();
-      portal.style.visibility = $('tabs').style.visibility = '';
-    });
+    // The access limit, the progress and the admin flag are asked for at the same time, not one after another.
+    var progress = Promise.all([env.loadDone(), env.loadSimDone ? env.loadSimDone() : Promise.resolve([])]);
     if (env.isAdmin) env.isAdmin().then(showAdmin);
+    (env.loadAccess ? env.loadAccess(user) : Promise.resolve(null)).then(function (access) {
+      applyAccess(access); build(); setUser(user); refresh(); pruneCache();
+      portal.style.visibility = $('tabs').style.visibility = '';
+      return progress;
+    }).then(function (r) {
+      done = {}; simDone = {};
+      r[0].forEach(function (id) { done[id] = true; });
+      r[1].forEach(function (id) { simDone[id] = true; });
+      refresh();
+    });
   };
   window.uglOnSignedOut = function () {
     done = {}; simDone = {}; applyAccess(null); build(); refresh(); showAdmin(false);

@@ -72,7 +72,8 @@
           (left <= 1 ? 'Last warning: one more attempt today blocks your access.' : 'Warning ' + a.strikes + ' of ' + (a.limit - 1) + ': attempt ' + a.limit + ' today blocks your access.'), 9000);
       });
     }
-    function editable(t) { return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]'); }
+    // Inputs, and the message templates ([data-copy-ok]): text that is meant to be pasted into an email.
+    function editable(t) { return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [data-copy-ok]'); }
 
     var style = document.createElement('style');
     style.textContent = CSS;

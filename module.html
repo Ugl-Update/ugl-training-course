@@ -9,6 +9,9 @@
   <title>Loading… · Unified Service and Consulting</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="preconnect" href="https://fjojwlygbbajfqhdusut.supabase.co" crossorigin>
+  <!-- The lesson's own stylesheets are fetched now, so they are ready when the page is written. -->
+  <link rel="preload" href="ugl-site.css" as="style"><link rel="preload" href="ugl-page.css" as="style">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script>try{if(localStorage.getItem('ugl-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
   <style>
     html,body{margin:0;height:100%;background:#141415;color:#f2f2f3;font-family:system-ui,sans-serif}
@@ -170,29 +173,63 @@
       });
     }
 
+    // ---- A pack (tools/pack.py) is one download holding many small files: a 4-byte little-endian
+    // header length, a JSON header {key: [offset, length, mime?]}, then the blobs back to back.
+    // Fills `into` with an object URL per key and resolves with it; `mime` is for entries whose
+    // header carries none.
+    function readPack(blob, into, mime) {
+      return blob.slice(0, 4).arrayBuffer().then(function (b) {
+        var n = new DataView(b).getUint32(0, true);
+        return blob.slice(4, 4 + n).text().then(function (t) {
+          var head = JSON.parse(t), base = 4 + n;
+          Object.keys(head).forEach(function (k) {
+            into[k] = URL.createObjectURL(blob.slice(base + head[k][0], base + head[k][0] + head[k][1], head[k][2] || mime));
+          });
+          return into;
+        });
+      });
+    }
+
     // ---- Narration for decks built by tools/build_decks.py: the slides show first, the voice
-    // pack follows (audio/<deck>.pack: 4-byte header length, JSON {id: [offset, length]}, MP3s).
+    // pack follows (audio/<deck>.pack: an MP3 per clip id, into window.UGL_AUDIO).
     function loadNarration() {
       var path = 'audio/' + file.replace(/\.html$/, '.pack');
       guard.toast('Loading narration…', 0);
       getFile(path, 'audio', function (p) { guard.toast('Loading narration… ' + Math.round(p * 100) + '%', 0); }).then(function (blob) {
-        return blob.slice(0, 4).arrayBuffer().then(function (b) {
-          var n = new DataView(b).getUint32(0, true);
-          return blob.slice(4, 4 + n).text().then(function (t) {
-            var head = JSON.parse(t), base = 4 + n, A = window.UGL_AUDIO || (window.UGL_AUDIO = {});
-            Object.keys(head).forEach(function (k) {
-              A[k] = URL.createObjectURL(blob.slice(base + head[k][0], base + head[k][0] + head[k][1], 'audio/mpeg'));
-            });
-          });
-        });
+        return readPack(blob, window.UGL_AUDIO || (window.UGL_AUDIO = {}), 'audio/mpeg');
       }).then(function () { guard.toast('Narration ready', 1600); }, function (e) {
         if (locked) return;
         guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Narration could not load. Refresh the page to try again.', 6000);
       });
     }
 
+    // ---- Pictures for pages built by tools/road.py and tools/build_decks.py: the text shows first,
+    // then media/<page>.pack arrives and every <img> whose src ends in "#k=<key>" gets its picture.
+    // Decks read window.UGL_IMG for slides they draw later.
+    var mediaEarly = null;  // the pack's download, started with the page for items the catalog marks media: true
+    function loadMedia() {
+      var path = 'media/' + file.replace(/\.html$/, '.pack'), M = window.UGL_IMG || (window.UGL_IMG = {});
+      function place() {
+        document.querySelectorAll('img').forEach(function (img) {
+          var m = /#k=([\w-]+)$/.exec(img.getAttribute('src') || '');
+          if (m && M[m[1]]) img.src = M[m[1]];
+        });
+      }
+      (mediaEarly || getFile(path, 'media')).then(function (blob) {
+        return readPack(blob, M, 'image/webp');
+      }).then(function () {
+        place();
+        // Decks draw slides on demand: pictures that appear later get placed too.
+        new MutationObserver(place).observe(document.body, { childList: true, subtree: true });
+      }).catch(function (e) {
+        if (locked) return;
+        guard.toast(/TOO MANY|PAUSED/.test(e.message) ? e.message : 'Pictures could not load. Refresh the page to try again.', 6000);
+      });
+    }
+
     function protect() {
       guard.install({ name: name, report: report, onBlocked: lockout }); readButton();
+      window.uglReport = report;  // road stops report finished drill sets through the same channel
       // Blocked or deleted while reading: leave the lesson for the login screen (ugl-auth.js).
       window.uglWatchSession(function (reason) { if (!locked) location.replace('index.html?out=' + reason); });
     }
@@ -225,7 +262,13 @@
         on = !!(r.data && r.data.length); show(); b.disabled = false;
       });
       b.addEventListener('click', function () {
-        var want = !on;
+        var want = !on, dr = window.UGL_DRILLS;
+        // A road stop counts as read once its drills are done: that is where the learning is checked.
+        if (want && dr && dr.done() < dr.n) {
+          guard.toast('Finish the drills first: ' + dr.done() + ' of ' + dr.n + ' done. Then mark the stop as read.', 4000);
+          var sec = document.getElementById('drills'); if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
         b.disabled = true;
         var q = want ? db.from('lesson_done').insert({ module: slug }) : db.from('lesson_done').delete().eq('module', slug);
         q.then(function (r) {
@@ -250,6 +293,7 @@
       var sub = document.querySelector('.topbar__sub');
       if (sub && /ACADEMY/.test(sub.textContent)) sub.textContent = '/ TRAINING COURSE';
       protect();
+      if (/#k=[\w-]+/.test(html)) loadMedia();
       if (deferredVoice) loadNarration();
       // Deep links like module.html?m=email-course#m6: jump to the section once the page has laid out.
       if (location.hash.length > 1) {
@@ -351,6 +395,7 @@
       name = email.slice(-dom.length) === dom ? email.slice(0, -dom.length) : email;
       sig = guard.signals();
       var fill = document.getElementById('fill');
+      if (item.media) { mediaEarly = getFile('media/' + file.replace(/\.html$/, '.pack'), 'media'); mediaEarly.catch(function () {}); }
       return getFile(file, 'main', function (p) { fill.style.width = p * 100 + '%'; }).then(function (blob) {
         if (/\.pdf$/.test(file)) return blob.arrayBuffer().then(showPdf);
         return blob.text().then(showHtml);

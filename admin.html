@@ -341,10 +341,23 @@
       var ids = Object.keys(s.mods).concat(Object.keys(s.marks).filter(function (k) { return !s.mods[k]; }));
       var mods = ids.map(function (k) { return { id: k, m: s.mods[k], mark: s.marks[k] }; })
         .sort(function (a, b) { var x = a.m ? a.m.last : a.mark, y = b.m ? b.m.last : b.mark; return x < y ? 1 : -1; });
+      // Drill results per stop: the best finished set (first-try score), from the 'drill' events.
+      var drills = {};
+      data.events.forEach(function (e) {
+        if (e.user_id !== s.u.id || e.kind !== 'drill') return;
+        var x = e.detail || {}, k = String(x.stop || e.module || ''), r = num(x.right), n = num(x.n);
+        if (!n) return;
+        drills[k] = drills[k] || { tries: 0, best: -1 };
+        drills[k].tries++;
+        if (r > drills[k].best) { drills[k].best = r; drills[k].n = n; drills[k].missed = Array.isArray(x.missed) ? x.missed.map(num).filter(Boolean) : []; }
+      });
+      Object.keys(drills).forEach(function (k) { if (ids.indexOf(k) < 0) { ids.push(k); mods.push({ id: k }); } });
       var lessons = mods.length ? mods.map(function (x) {
         var mark = x.mark ? '<b class="ok">✓ Marked read ' + esc(when(x.mark)) + '</b>' : ITEM[x.id] && ITEM[x.id].section === 'course' ? 'Not marked as read' : 'Tool';
         var opened = x.m ? 'Opened ' + x.m.n + (x.m.n > 1 ? ' times' : ' time') + ' · ' + dur(x.m.secs) + ' reading' : '<span class="r">Never opened</span>';
-        return '<div><span>' + esc(title(x.id)) + '<small>' + mark + ' · ' + opened + '</small></span><time>' + (x.m ? esc(when(x.m.last)) : '') + '</time></div>';
+        var dr = drills[x.id], drill = dr ? ' · <b class="' + (dr.best === dr.n ? 'ok' : dr.best * 2 < dr.n ? 'r' : '') + '">Drills ' + dr.best + ' / ' + dr.n + ' first try</b>' +
+          (dr.missed.length ? ' (missed ' + dr.missed.join(', ') + ')' : '') + (dr.tries > 1 ? ' · ' + dr.tries + ' rounds' : '') : '';
+        return '<div><span>' + esc(title(x.id)) + '<small>' + mark + ' · ' + opened + drill + '</small></span><time>' + (x.m ? esc(when(x.m.last)) : '') + '</time></div>';
       }).join('') : '<div><span>No lessons opened or marked yet.</span></div>';
       var acts = [];
       data.access.forEach(function (a) {
@@ -352,9 +365,10 @@
         acts.push({ at: a.at, red: !a.allowed, text: a.allowed ? 'Opened ' + title(a.module) : (REASON[a.reason] || a.reason) + ' · ' + title(a.module), ua: a.ua, ip: a.ip });
       });
       data.events.forEach(function (e) {
-        if (e.user_id !== s.u.id || e.kind !== 'view') return;
+        if (e.user_id !== s.u.id) return;
         var x = e.detail || {};
-        acts.push({ at: e.at, red: x.noInput === true, text: 'Read ' + title(e.module) + ' for ' + dur(num(x.secs)) + (x.noInput === true ? ' with no input' : ''), ua: e.ua, ip: e.ip });
+        if (e.kind === 'view') acts.push({ at: e.at, red: x.noInput === true, text: 'Read ' + title(e.module) + ' for ' + dur(num(x.secs)) + (x.noInput === true ? ' with no input' : ''), ua: e.ua, ip: e.ip });
+        else if (e.kind === 'drill') acts.push({ at: e.at, red: num(x.right) * 2 < num(x.n), text: 'Finished the drills of ' + title(String(x.stop || e.module || '')) + ': ' + num(x.right) + ' of ' + num(x.n) + ' right on the first try', ua: e.ua, ip: e.ip });
       });
       alerts.forEach(function (a) { if (a.user === s.u.id && !/^Blocked|^Asked|^Marked/.test(a.text)) acts.push({ at: a.at, red: a.red, text: a.text, ua: a.ua, ip: a.ip }); });
       Object.keys(s.marks).forEach(function (k) { acts.push({ at: s.marks[k], red: false, text: 'Marked ' + title(k) + ' as read', ua: '', ip: '' }); });

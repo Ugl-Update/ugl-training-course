@@ -10,6 +10,7 @@ so they can be viewed inside the preview. The large narrated decks are not bundl
 Needs poppler's pdftoppm.
 """
 import base64, json, os, pathlib, re, subprocess, sys
+from road import js_data
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = pathlib.Path(os.environ.get("UGL_SOURCES", ROOT.parent / "ugl-training-sources"))  # private content repo
@@ -29,6 +30,19 @@ def page_parts(path):
     m = re.search(r'<main class="(page[^"]*)">(.*)</main>', doc, re.S)
     scripts = re.findall(r"<script>(.*?)</script>", doc[m.end():], re.S)
     return {"cls": m.group(1), "html": m.group(2), "js": "\n".join(scripts)}
+
+
+def unpack_media(out):
+    """Pictures from the road pages' media packs as files, so the preview page stays small (decks are not previewed)."""
+    from pack import unpack
+    d = out / "photos"; d.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for p in sorted((DATA / "upload-to-supabase" / "media").glob("road-*.pack")):
+        for k, (data, mime) in unpack(p.read_bytes()).items():
+            f = d / f"{k}.{mime.split('/')[1]}"
+            if not f.exists():
+                f.write_bytes(data); n += 1
+    return n
 
 
 def render_pdfs(out):
@@ -52,16 +66,17 @@ def main():
     for f in sorted(PAGES.glob("*.html")):
         pages[f.stem] = page_parts(f)
     pdf_pages = render_pdfs(out)
+    photos = unpack_media(out)
 
     css = "\n".join((ROOT / n).read_text(encoding="utf-8") for n in ("ugl-site.css", "ugl-page.css"))
     catalog = (ROOT / "ugl-catalog.js").read_text(encoding="utf-8")
     portal = (ROOT / "ugl-portal.js").read_text(encoding="utf-8")
-    theme = (ROOT / "ugl-theme.js").read_text(encoding="utf-8")
+    theme = (ROOT / "ugl-theme.js").read_text(encoding="utf-8") + "\n" + (ROOT / "ugl-road.js").read_text(encoding="utf-8")
 
     # Page id in pages/ -> catalog id: pages/<x>.html is catalog item whose path ends with it.
     mounts = []
     for pid, p in pages.items():
-        mounts.append(f"{json.dumps(pid)}:{{cls:{json.dumps(p['cls'])},html:{json.dumps(p['html'], ensure_ascii=False).replace('</', '<' + chr(92) + '/')},"
+        mounts.append(f"{json.dumps(pid)}:{{cls:{json.dumps(p['cls'])},html:{js_data(p['html'])},"
                       f"run:function(){{\n{p['js']}\n}}}}")
     mounts_js = "window.UGL_PREVIEW_PAGES={" + ",\n".join(mounts) + "};"
 
@@ -69,7 +84,7 @@ def main():
         .replace("/*LOGO*/", "data:image/png;base64," + base64.b64encode((ROOT / "assets" / "unified-logo-icon.png").read_bytes()).decode()) \
         .replace("/*MOUNTS*/", mounts_js).replace("/*PDFS*/", json.dumps(pdf_pages)).replace("/*WITHHELD*/", json.dumps(WITHHELD))
     (out / "index.html").write_text(doc, encoding="utf-8")
-    print("preview:", out / "index.html", f"{len(doc)//1024} KB;", "pdf pages:", pdf_pages)
+    print("preview:", out / "index.html", f"{len(doc)//1024} KB;", "pdf pages:", pdf_pages, "; photos:", photos)
 
 
 PREVIEW = r"""<title>UGL Training Course</title>
@@ -158,8 +173,14 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
     document.getElementById('lesson-crumb').textContent = crumb(it) + ' / ' + it.title.toUpperCase();
     lastTab = it.section;
     document.getElementById('lesson-back').href = '#' + lastTab;
+    window.UGL_DRILLS = null;
     if (PAGES[key]) {
       body.innerHTML = '<main class="' + PAGES[key].cls + '">' + PAGES[key].html + '</main>';
+      // Pictures: the live site streams them from the page's media pack; here they are files next to this page.
+      body.querySelectorAll('img').forEach(function (img) {
+        var m = /#k=([\w-]+)$/.exec(img.getAttribute('src') || '');
+        if (m) img.src = 'photos/' + m[1] + '.webp';
+      });
       PAGES[key].run();
     } else if (PDFS[id]) {
       var imgs = '';
@@ -180,7 +201,12 @@ window.UGL_CONFIG = { userDomain: 'ugldispatch.com' };
     var mark = document.getElementById('lesson-mark');
     mark.hidden = it.section !== 'course';
     mark.classList.toggle('is-on', window.uglPreviewIsRead(id));
-    mark.onclick = function () { var on = !window.uglPreviewIsRead(id); window.UGL_ENV.setDone(id, on); mark.classList.toggle('is-on', on); };
+    mark.onclick = function () {
+      var on = !window.uglPreviewIsRead(id), dr = window.UGL_DRILLS;
+      // As on the live site: a road stop is marked as read once its drills are done.
+      if (on && dr && dr.done() < dr.n) { window.UGLRoadCommon.toast('Finish the drills first: ' + dr.done() + ' of ' + dr.n + ' done.', 4000); document.getElementById('drills').scrollIntoView({ behavior: 'smooth' }); return; }
+      window.UGL_ENV.setDone(id, on); mark.classList.toggle('is-on', on);
+    };
     var t = anchor && document.getElementById(anchor);
     if (t) t.scrollIntoView();
     return true;

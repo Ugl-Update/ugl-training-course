@@ -32,7 +32,8 @@ const BLOCK_UA =
 // Browsers built around an AI agent. They usually report a plain Chrome user agent, so this only
 // catches the ones that name themselves; the behaviour checks catch the rest.
 const AGENT_UA = /ChatGPT Atlas|\bAtlas\/\d|\bComet\/\d|Perplexity|\bDia\/\d|Genspark|Fellou|Opera Neon/i;
-const EVENT_KINDS = ["copy", "print", "save", "view"];
+// "drill": a finished set of drills on a road stop ({stop, right, n, missed}); the admin page shows it.
+const EVENT_KINDS = ["copy", "print", "save", "view", "drill"];
 
 // Refusals that block the account, with what the person and the admin are told.
 const AUTO_BLOCK: Record<string, string> = {
@@ -134,7 +135,7 @@ async function accessProblem(limit: { mode: string; items: string[] }, module: s
   if (!items) return "no-access";
   const it = items.get(module);
   if (!it) return "no-access";
-  const expected = part === "audio" ? "audio/" + it.path.replace(/\.html$/, ".pack") : it.path;
+  const expected = part === "main" ? it.path : part + "/" + it.path.replace(/\.html$/, ".pack");
   if (path !== expected) return "no-access";
   if (limit.mode === "tools") return it.section === "tools" ? null : "no-access";
   return (limit.items || []).includes(it.id) ? null : "no-access";
@@ -190,7 +191,8 @@ Deno.serve(async (req) => {
 
   if (body.action !== "open") return json({ error: "bad-request" }, 400);
   const path = String(body.path || "");
-  const part = body.part === "audio" ? "audio" : "main";
+  // A page may fetch two side files after itself: its narration (audio/) and its pictures (media/).
+  const part = ["audio", "media"].includes(body.part) ? body.part : "main";
   if (!SAFE_PATH.test(path) || path.includes("..")) return json({ error: "bad-request" }, 400);
 
   // Decide what to refuse outright, and what only to flag for the admin.

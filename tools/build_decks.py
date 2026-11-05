@@ -9,20 +9,28 @@ default; override with UGL_SOURCES) and writes to its upload-to-supabase/ folder
   audio/UGL-*-Final.pack    its narration, loaded by module.html after the slides are showing
 
 The Industry Reference Guide's card photos (decks/roadbook-assets/<name>.jpg) are put inside
-the deck, so nothing it shows is served from the public site.
+the deck's picture map, so nothing it shows is served from the public site.
 
 Narration is re-encoded from 128 kbps to 48 kbps mono (plenty for a voice), images become
 WebP when that is clearly smaller, and embedded TTF fonts become WOFF2. The output is
 deterministic, so rebuilding unchanged decks gives byte-identical files.
 
-Audio pack format: 4-byte little-endian header length, a UTF-8 JSON header
-{"<narration id>": [offset, length], ...}, then the MP3 clips back to back (offsets count
-from the end of the header).
+The deck's pictures (its `const IMG = {...}` map, `RBIMG` in the reference guide) leave the
+HTML too: media/UGL-*-Final.pack holds them, and the map becomes a lookup into window.UGL_IMG
+that module.html fills when the pack arrives. Until then a picture is a blank placeholder whose
+URL ends in "#k=<key>", which module.html swaps for the real one. That takes a deck from 2–6 MB
+down to a fraction of that before the first slide shows.
+
+Pack format (audio and media): 4-byte little-endian header length, a UTF-8 JSON header
+{"<id>": [offset, length(, mime)], ...}, then the blobs back to back (offsets count from the
+end of the header).
 Needs: ffmpeg (libmp3lame), Pillow, fontTools + brotli.
 """
 import base64, io, json, os, pathlib, re, struct, subprocess, sys, tempfile
 from PIL import Image
 from fontTools.ttLib import TTFont
+
+from pack import pack
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = pathlib.Path(os.environ.get("UGL_SOURCES", ROOT.parent / "ugl-training-sources"))
@@ -86,6 +94,34 @@ def image_small(kind, data):
     return ("webp", out) if len(out) < len(data) * 0.9 else (kind, data)
 
 
+MAP_RE = re.compile(r"const (RB)?IMG = \{(.*?)\};", re.DOTALL)
+ENTRY_RE = re.compile(r'''["']?([\w-]+)["']?\s*:\s*["']data:image/(jpeg|png|webp);base64,(''' + B64 + r''')["']''')
+# A blank 16:9 picture; the key after "#" tells module.html which real picture goes here.
+PLACEHOLDER = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%229%22%2F%3E%23k%3D"
+
+
+def split_pictures(src, html):
+    """Move the deck's picture map into a pack. Returns (html, pack bytes)."""
+    m = MAP_RE.search(html)
+    if not m:
+        sys.exit(f"{src.name}: no IMG map found")
+    name = (m.group(1) or "") + "IMG"
+    entries = ENTRY_RE.findall(m.group(2))
+    if len(entries) != m.group(2).count("data:image/"):
+        sys.exit(f"{src.name}: could not read every picture in {name}")
+    # The map may only be read as IMG[key]: iterating or serialising it would see an empty object now.
+    rest = html[:m.start()] + html[m.end():]
+    if re.search(r"Object\.\w+\(\s*" + name + r"\b|\bin\s+" + name + r"\b|JSON\.stringify\(\s*" + name + r"\b|\b" + name + r"\s*\)", rest):
+        sys.exit(f"{src.name}: {name} is used in a way other than {name}[key]")
+    items = {}
+    for k, kind, b in entries:
+        kind, data = image_small(kind, base64.b64decode(b))
+        items[k] = (data, f"image/{kind}")
+    stub = (f"const {name} = (function () {{ var m = window.UGL_IMG || (window.UGL_IMG = {{}});"
+            f" return new Proxy(m, {{ get: function (t, k) {{ return typeof k === 'string' ? (t[k] || '{PLACEHOLDER}' + k) : t[k]; }} }}); }})();")
+    return html[:m.start()] + stub + html[m.end():], pack(items)
+
+
 def font_woff2(data):
     f = TTFont(io.BytesIO(data), recalcTimestamp=False)
     f.flavor = "woff2"
@@ -119,12 +155,9 @@ def build(src):
         sys.exit(f"{src.name}: audio left in the deck")
     if "roadbook-assets/" in html:
         sys.exit(f"{src.name}: still loads photos from the public site")
-    header, off = {}, 0
-    for k, clip in clips:
-        header[k] = [off, len(clip)]
-        off += len(clip)
-    head = json.dumps(header, separators=(",", ":")).encode()
-    pack = struct.pack("<I", len(head)) + head + b"".join(clip for _, clip in clips)
+    voice = pack({k: (clip, "audio/mpeg") for k, clip in clips})
+
+    html, media = split_pictures(src, html)
 
     def small_image(mm):
         kind, data = image_small(mm.group(1), base64.b64decode(mm.group(2)))
@@ -136,10 +169,12 @@ def build(src):
     html = IMG_RE.sub(small_image, html)
     html = FONT_RE.sub(small_font, html)
 
-    (OUT / "audio").mkdir(parents=True, exist_ok=True)
+    for sub in ("audio", "media"):
+        (OUT / sub).mkdir(parents=True, exist_ok=True)
     (OUT / src.name).write_text(html, encoding="utf-8")
-    (OUT / "audio" / src.name.replace(".html", ".pack")).write_bytes(pack)
-    print(f"{src.name}: {before / 1e6:.1f} MB -> deck {len(html) / 1e6:.1f} MB + narration {len(pack) / 1e6:.1f} MB ({len(clips)} clips)")
+    (OUT / "audio" / src.name.replace(".html", ".pack")).write_bytes(voice)
+    (OUT / "media" / src.name.replace(".html", ".pack")).write_bytes(media)
+    print(f"{src.name}: {before / 1e6:.1f} MB -> deck {len(html) / 1e6:.2f} MB + pictures {len(media) / 1e6:.1f} MB + narration {len(voice) / 1e6:.1f} MB ({len(clips)} clips)")
 
 
 def main():

@@ -121,6 +121,25 @@ The Edge Function `course-admin` (source in `supabase/functions/course-admin/`) 
 - Last login: Authentication → Users → *Last sign in*.
 - Raw data: Table Editor → `lesson_done` (marked as read), `module_opens` (opened), `access_log`, `security_events`.
 
+## The road, the picture packs and the drills
+
+The Course tab opens with "The Life of a Load": ten stops built from `sources/road/` in the private repo
+(`sources/road/README.md` there explains the files). Each stop ends with drills; a stop can only be marked
+as read once its drills are done, and the finished set (right answers on the first try, which ones were
+missed) is reported to this admin page under the person's lessons. A page's photos and a deck's pictures
+come in a separate "pack" after the text, so lessons open fast; the content gateway hands those out too.
+
+## Ask the Course (AI helper)
+
+The tool searches the course text on the trainee's device and, on the live site, can ask an AI helper to
+explain the answer from the course passages only (edge function `ask`). To switch the helper on, add the
+secret `GROQ_API_KEY` to the Supabase project (a free key from console.groq.com; optional `ASK_MODEL`
+and `ASK_DAILY`). Without the key the page shows the passages and says the helper is off. Every question
+and answer is kept in the table `ask_log` (admins can read it in the Table Editor): read it now and then,
+it shows what people cannot find in the course. The free Groq tier is shared by the whole team, about
+1,000 questions a day and a few a minute; Groq states it does not train on API data by default. Only
+course text and the question leave the site, never names or load numbers.
+
 ## Public repo warning
 
 This repo is public and only holds the site itself (login, portal, styles, tools). Never commit course content here: decks, documents, built pages and their photos belong in the private `ugl-training-sources` repo. The site was moved to this fresh repository so that its history holds none of them; the old repository with that history, `ugl-training-course-old`, is private.

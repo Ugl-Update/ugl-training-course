@@ -36,7 +36,9 @@ body.ugl-unlocked .course{display:block}
 
 /* ---- top bar ---- */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 32px;border-bottom:1px solid var(--u-line);
-  position:sticky;top:env(safe-area-inset-top,0px);background:var(--u-bar);backdrop-filter:blur(10px);z-index:5}
+  position:sticky;top:env(safe-area-inset-top,0px);background:var(--u-bg);z-index:5}
+/* The frosted bar only where it is cheap: blurring everything that scrolls under it makes phones stutter. */
+@media(min-width:900px) and (hover:hover){.topbar{background:var(--u-bar);backdrop-filter:blur(10px)}}
 .topbar__brand{display:flex;align-items:center;gap:12px;min-width:0}
 .topbar__mark{width:34px;height:34px;object-fit:contain;flex-shrink:0}
 .topbar__title{font-weight:800;font-size:15px;letter-spacing:.04em;color:var(--u-text)}
@@ -124,6 +126,7 @@ a.lcard:focus-visible{box-shadow:0 0 0 2px rgba(var(--u-red-rgb),.45)}
 .lcard__state{font:500 10.5px var(--u-mono);letter-spacing:.06em;color:var(--u-green)}
 .lcard__title{font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--u-text);line-height:1.25}
 .lcard__desc{font-size:13.5px;line-height:1.5;color:var(--u-text-3)}
+.lcard__meta{font:500 10px var(--u-mono);letter-spacing:.12em;color:var(--u-green);margin-top:2px}
 .lcard__arrow{align-self:center;font:500 17px var(--u-mono);color:var(--u-faint-2);transition:color .18s,transform .18s}
 a.lcard:hover .lcard__arrow{color:var(--u-red-ink);transform:translateX(3px)}
 .lcard-wrap{position:relative;display:flex;min-width:0}
@@ -178,6 +181,8 @@ a.lcard:hover .lcard__arrow{color:var(--u-red-ink);transform:translateX(3px)}
   .overview{grid-template-columns:1fr}.ov--course{grid-row:auto}
   .how{grid-template-columns:1fr}.sim-row{grid-template-columns:1fr}
   .topbar{flex-wrap:wrap}.tabs{order:3;flex-basis:100%;overflow-x:auto}.tab{flex:1;text-align:center}
+  /* With the tabs wrapped under the brand the bar is three rows tall: on a phone it scrolls away instead of covering a third of the screen. */
+  .topbar:has(.tabs){position:static}
 }
 @media(max-width:700px){
   .cards,.track .cards{grid-template-columns:1fr}
@@ -185,6 +190,7 @@ a.lcard:hover .lcard__arrow{color:var(--u-red-ink);transform:translateX(3px)}
 }
 @media(max-width:640px){
   .topbar{padding:12px 16px}.topbar__tag,.topbar__sub{display:none}
+  .hero{margin-bottom:26px}.hero p{font-size:15px}
   .main{padding:34px 16px 72px}
   .ov{padding:20px}
 }
@@ -199,3 +205,7 @@ a.lcard:hover .lcard__arrow{color:var(--u-red-ink);transform:translateX(3px)}
 .lib-head h2{font-weight:800;font-size:30px;letter-spacing:-.02em;color:var(--u-text)}
 .lib-head p{margin-top:6px;font-size:14.5px;line-height:1.5;color:var(--u-text-3);max-width:620px}
 @media(max-width:640px){.road::before{left:17px}.road__stop{grid-template-columns:36px minmax(0,1fr);gap:10px}.road__n{width:36px;height:36px;font-size:12px}}
+/* Road rows on the Course tab: tighter than library cards, the read button beside the text */
+.road__stop .lcard{padding:14px 16px}
+.road__stop .lcard-wrap.has-mark>.lcard{padding-bottom:50px}
+.road__stop .lcard__desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
