@@ -58,18 +58,12 @@ GATE_RE = re.compile(r"^\(Dispatcher must not give Good to Go", re.I)
 BUL_RE = re.compile(r"^-+\s*(.*)$")
 NUM_RE = re.compile(r"^\d+\s*[-.)]\s*(.*)$")
 
-# The owner's current rule, newer than the Word policies (6 Nov 2026): the POD goes to the broker immediately after
-# delivery. The .docx files still say "within 1 hour"; the course pages show the current rule.
-POLICY_FIX = [(re.compile(r",?\s*within 1 hour after delivery", re.I), " immediately after delivery")]
-
 def read_lines(path):
     d = docx.Document(str(path))
     out = []
     for p in d.paragraphs:
         for l in p.text.split("\n"):
             l = l.replace("\xa0", " ").strip()
-            for rx, to in POLICY_FIX:
-                l = rx.sub(to, l)
             if l:
                 out.append(l)
     return out
