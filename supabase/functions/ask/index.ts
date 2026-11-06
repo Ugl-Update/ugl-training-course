@@ -13,10 +13,11 @@
 // it. Every question and answer is logged (public.ask_log) so the admin can read what was asked and
 // correct the course where the answers are weak.
 //
-// Secrets: GROQ_API_KEY (console.groq.com; the free tier is enough for a team), optional ASK_MODEL
-// (default openai/gpt-oss-120b) and ASK_DAILY (questions per person per day, default 40).
-// Without GROQ_API_KEY the function answers { error: "not-configured" } and the page shows the
-// passages instead.
+// The Groq key (console.groq.com; the free tier is enough for a team): the Edge Functions secret GROQ_API_KEY
+// if set, otherwise the Vault secret "groq_api_key", read through public.groq_api_key() (service role only,
+// supabase/migrations/20261106_groq_api_key_from_vault.sql). Optional secrets: ASK_MODEL (default
+// openai/gpt-oss-120b) and ASK_DAILY (questions per person per day, default 40). Without a key the function
+// answers { error: "not-configured" } and the page shows the passages instead.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -73,6 +74,18 @@ function cors(origin: string | null, stage: Stage) {
   };
 }
 
+// The key: the Edge Functions secret wins; otherwise Vault, kept for 10 minutes per instance.
+let vaultKey: { at: number; key: string | null } | null = null;
+async function groqKey(): Promise<string | null> {
+  const env = Deno.env.get("GROQ_API_KEY");
+  if (env) return env;
+  if (vaultKey && Date.now() - vaultKey.at < 600_000) return vaultKey.key;
+  const { data, error } = await db.rpc("groq_api_key");
+  const key = !error && typeof data === "string" && data ? data : null;
+  vaultKey = { at: Date.now(), key };
+  return key;
+}
+
 async function log(row: Record<string, unknown>) {
   try { await db.from("ask_log").insert(row); } catch { /* the answer still goes back */ }
 }
@@ -82,7 +95,7 @@ Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors(origin, stage), "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin, stage) });
-  if (req.method === "GET") return json({ ok: true, stage, helper: !!Deno.env.get("GROQ_API_KEY"), model: MODEL, index: !!(await loadIndex(stage)) });
+  if (req.method === "GET") return json({ ok: true, stage, helper: !!(await groqKey()), model: MODEL, index: !!(await loadIndex(stage)) });
   if (req.method !== "POST") return json({ error: "method" }, 405);
   if (!origin || !STAGES[stage].origins.includes(origin)) return json({ error: "origin" }, 403);
 
@@ -106,7 +119,7 @@ Deno.serve(async (req) => {
   const used = count ?? 0;
   if (used >= DAILY) return json({ error: "limit", remaining: 0 }, 429);
 
-  const key = Deno.env.get("GROQ_API_KEY");
+  const key = await groqKey();
   if (!key) return json({ error: "not-configured" }, 503);
   const byId = await loadIndex(stage);
   if (!byId) return json({ error: "no-index" }, 503);

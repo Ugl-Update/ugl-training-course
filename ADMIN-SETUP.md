@@ -132,9 +132,13 @@ come in a separate "pack" after the text, so lessons open fast; the content gate
 ## Ask the Course (AI helper)
 
 The tool searches the course text on the trainee's device and, on the live site, can ask an AI helper to
-explain the answer from the course passages only (edge function `ask`). To switch the helper on, add the
-secret `GROQ_API_KEY` to the Supabase project (a free key from console.groq.com; optional `ASK_MODEL`
-and `ASK_DAILY`). Without the key the page shows the passages and says the helper is off. Every question
+explain the answer from the course passages only (edge function `ask`). The helper runs on a free Groq key
+(console.groq.com), switched on 6 November 2026. The key is kept in Supabase Vault under the name
+`groq_api_key`, and only the `ask` function can read it. To replace it, run this in the SQL editor:
+`select vault.update_secret((select id from vault.secrets where name = 'groq_api_key'), '<new key>');`.
+The helper picks up the new key within 10 minutes. An Edge Functions secret `GROQ_API_KEY`, if one is
+added in the dashboard, is used instead of Vault. Two optional secrets change how it runs: `ASK_MODEL`
+and `ASK_DAILY`. Without a key the page shows the passages and says the helper is off. Every question
 and answer is kept in the table `ask_log` (admins can read it in the Table Editor): read it now and then,
 it shows what people cannot find in the course. The free Groq tier is shared by the whole team, about
 1,000 questions a day and a few a minute; Groq states it does not train on API data by default. Only
@@ -145,7 +149,7 @@ course text and the question leave the site, never names or load numbers.
 Every page has a robot button at the top right. It opens a panel where a trainee asks a question in
 their own words. The panel answers from the course itself (it searches the same index as the Ask the
 Course tool and links to the stop that covers it) and, on the live site, also asks the AI helper (the
-`ask` function) to explain the answer from those passages only. Without the `GROQ_API_KEY` secret the
+`ask` function) to explain the answer from those passages only. Without a Groq key the
 panel shows the course passages and says the helper is off; with it, every question and answer is kept
 in `ask_log`. The index comes through the content gateway like any lesson, so people limited to "Tools
 only" or to picked items need the Ask the Course tool open to them. `DESIGN.md` describes the look of the
