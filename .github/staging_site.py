@@ -8,9 +8,10 @@
 import json, mimetypes, os, pathlib, shutil, sys, time, urllib.error, urllib.parse, urllib.request
 
 DIST = pathlib.Path("dist")
-# What the site needs at run time; build tools, functions and docs stay out.
-FILES = ["index.html", "module.html", "admin.html", "favicon.png", "ugl-config.js", "ugl-catalog.js", "ugl-auth.js",
-         "ugl-theme.js", "ugl-guard.js", "ugl-portal.js", "ugl-login.js", "ugl-site.css", "ugl-page.css", "ugl-road.js"]
+# What the site needs at run time: the three pages, the icon and every ugl-*.js / ugl-*.css next to them
+# (build tools, functions and docs stay out). A new script or stylesheet is picked up without editing this list.
+PAGES = ["index.html", "module.html", "admin.html"]
+FILES = PAGES + ["favicon.png"] + sorted(str(p) for p in pathlib.Path(".").glob("ugl-*.js")) + sorted(str(p) for p in pathlib.Path(".").glob("ugl-*.css"))
 DIRS = ["assets", "vendor"]
 TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
          ".png": "image/png", ".svg": "image/svg+xml", ".webp": "image/webp", ".woff2": "font/woff2", ".mjs": "text/javascript"}
@@ -28,6 +29,11 @@ def build():
     s = s.replace(marker, marker + "\n  stage: 'staging',  // set by the staging publish: this copy talks to content-staging and ask-staging", 1)
     cfg.write_text(s, encoding="utf-8")
     (DIST / "staging-build.txt").write_text(f"{os.environ.get('GITHUB_REF_NAME', '?')} {os.environ.get('GITHUB_SHA', '?')}\n")
+    # Every local script, stylesheet and image a page names must be in dist/, or the staging site opens broken.
+    import re
+    missing = sorted({ref for page in PAGES for ref in re.findall(r'(?:src|href)="([^"#?:\']+\.(?:js|mjs|css|png|svg|webp))"', pathlib.Path(page).read_text(encoding="utf-8"))
+                      if not (DIST / ref).is_file()})
+    assert not missing, f"pages reference files that are not in dist/: {missing}"
     n = sum(1 for p in DIST.rglob('*') if p.is_file()); print(f"dist/: {n} files")
 
 
