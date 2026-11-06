@@ -426,7 +426,6 @@ class Road:
             cards.append(f'<article class="card who" data-s="{esc((tm["name"] + " " + " ".join(tm["for"])).lower())}"><h3>{esc(tm["name"])}{badge}</h3>{tag}'
                          + (f"<ul>{items}</ul>" if items else "") + f"{note}</article>")
         body = ('<input class="search" id="q" type="search" placeholder="What is happening? e.g. alarm, fuel, logbook" autocomplete="off" aria-label="Search">'
-                f'<div class="callout callout--gray"><b>Broker after-hours sheet</b><p>{esc(t["broker_sheet"])}</p></div>'
                 f'<div class="sg" id="who">{"".join(cards)}</div><p class="empty" id="none" style="display:none">Nothing matches. Ask your manager.</p>')
         return self.tool("Who to Tag", "Reference", "Which team handles what. Search for what is happening on the load.", "who", {},
                          chips=[f"{len(t['teams'])} teams"], body=body)

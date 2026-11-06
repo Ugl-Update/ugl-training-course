@@ -179,7 +179,7 @@
     var tools = ITEMS.filter(function (i) { return i.section === 'tools'; });
     if (!tools.length) { ov.classList.add('overview--one'); v.appendChild(ov); return v; }
     var groups = cat.toolGroups.filter(function (g) { return tools.some(function (i) { return i.group === g.id; }); });
-    var t = el('section', 'ov', '<div class="ov__k">Tools</div><div class="ov__big"><b>' + tools.length + '</b><span>' + (tools.length === 1 ? 'tool' : 'tools') + ' for the shift</span></div>' +
+    var t = el('section', 'ov', '<div class="ov__k">Tools</div><div class="ov__big"><b>' + tools.length + '</b><span>' + (tools.length === 1 ? 'tool' : 'tools') + ' for the job</span></div>' +
       '<p class="ov__p">' + groups.map(function (g) { return g.title; }).join(' · ') + '. Calculators, state tables and checklists you can open mid-call.</p>' +
       '<div class="ov__actions"><a class="btn-secondary" href="#tools">Go to tools</a></div>');
     ov.appendChild(t);
@@ -237,7 +237,7 @@
 
   function viewTools() {
     var v = el('div', 'view');
-    v.appendChild(hero('Tools for the shift', 'Quick answers while you are on a load. These are references, so they do not count toward course progress.'));
+    v.appendChild(hero('Tools for the job', 'Quick answers while you are on a load. These are references, so they do not count toward course progress.'));
     cat.toolGroups.forEach(function (g) {
       var items = ITEMS.filter(function (i) { return i.section === 'tools' && i.group === g.id; });
       if (!items.length) return;
@@ -250,7 +250,7 @@
 
   function viewSimulator() {
     var v = el('div', 'view');
-    v.appendChild(hero('Work simulator', 'Handle a real shift in a safe place. Messages arrive one at a time; you decide what to do, write the replies, and every answer is checked against company policy.'));
+    v.appendChild(hero('Work simulator', 'Handle real loads in a safe place. Messages arrive one at a time; you decide what to do, write the replies, and every answer is checked against company policy.'));
     v.appendChild(el('ol', 'how', '<li><b>Messages arrive</b><span>Broker emails land in Gmail. Drivers, the fuel team and maintenance write in Telegram.</span></li>' +
       '<li><b>You decide and reply</b><span>Pick the right action, attach the right paperwork, and write the email or message.</span></li>' +
       '<li><b>You get scored</b><span>Each reply is checked for the facts the policy requires, with a model answer to compare.</span></li>'));

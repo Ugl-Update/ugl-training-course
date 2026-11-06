@@ -325,7 +325,7 @@ def pulp():
 def load_timeline():
     stops = [("To the shipper", "update, no location"), ("At the shipper", "on site · 2 h · 4 h"), ("Loaded", "checks, stand by"),
              ("Pickup email", "Good to Go in writing"), ("In transit", "every 3 hours"), ("At the receiver", "on site · fees"),
-             ("Delivered", "POD within 1 hour"), ("Closed", "LOAD# Completed")]
+             ("Delivered", "POD immediately"), ("Closed", "LOAD# Completed")]
     out = [f'<line x1="40" y1="70" x2="{W - 40}" y2="70" class="dg-bar"/>']
     n = len(stops)
     for i, (t, s) in enumerate(stops):

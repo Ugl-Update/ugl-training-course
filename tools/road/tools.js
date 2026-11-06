@@ -36,7 +36,7 @@ window.UGLRoad = (function () {
   }
 
   // ------------------------------------------------------------ message builder: a searchable cheat sheet
-  // The six templates a shift sends most: one tap copies them, before any searching. Ids from messages.json.
+  // The six templates sent most: one tap copies them, before any searching. Ids from messages.json.
   var MOST = [['to-pu-far', 'Rolling to the shipper'], ['at-pu', 'On site at the shipper'], ['pu-van', 'Pickup email'], ['tr-update', 'Transit update'], ['delivered', 'Delivered'], ['g-pod', 'POD']];
   function builder(D) {
     var root = $('tool'), RECENT = 'ugl-mb-recent';
