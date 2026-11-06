@@ -74,12 +74,12 @@
     '.ua__hit{display:block;margin-top:8px;padding:12px 16px;border-radius:var(--u-r-card,8px);background:var(--u-surface-2,#1c191f);color:inherit;text-decoration:none}.ua__hit:focus-visible{' + FOCUS + '}',
     '.ua__hit b{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;font-size:15px;font-weight:700;line-height:1.35;color:var(--u-text,#fff)}.ua__hit b .ua__cite{flex:none;margin:0;vertical-align:0}',
     '.ua__hit>span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;color:var(--u-text-3,#b7b7bd)}',
-    '.ua__hit mark{background:rgba(var(--u-live-rgb,0,229,255),.22);color:inherit;border-radius:var(--u-r-chip,4px);padding:0 2px}',
+    '.ua__hit mark{background:none;color:var(--u-text,#fff);font-weight:600;padding:0}',
     '.ua__hit small{display:block;margin-top:4px;font-size:13px;font-weight:600;color:var(--u-live-ink,#00e5ff)}',
     // the first screen: a greeting and the questions to try, as full-width rows a thumb hits first time
     '.ua__try{width:100%}.ua__sugg{display:flex;flex-direction:column;gap:8px;width:100%}',
     '.ua__sugg button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--u-line-2,rgba(255,255,255,.16));border-radius:var(--u-r-ctl,6px);background:var(--u-surface-2,#1c191f);color:var(--u-text-2,#dcdce0);font:500 15px/1.35 var(--u-font,Archivo,sans-serif);text-align:left;cursor:pointer;transition:border-color .15s ease,color .15s ease,transform .12s ' + EASE + '}',
-    '.ua__sugg button::after{content:"\\2192";flex:none;color:var(--u-muted,#95959b)}.ua__sugg button:active{transform:scale(.985)}.ua__sugg button:focus-visible{' + FOCUS + '}',
+    '.ua__sugg button::after{content:"\\2192";content:"\\2192"/"";flex:none;color:var(--u-muted,#95959b)}.ua__sugg button:active{transform:scale(.985)}.ua__sugg button:focus-visible{' + FOCUS + '}',
     // the composer: one field box with the send arrow inside, the way chat apps do it; the ring is the site's input focus
     '.ua__f{flex:none;padding:8px 12px 0;border-top:1px solid var(--u-line,rgba(255,255,255,.09))}',
     '.ua__box{display:flex;align-items:flex-end;gap:8px;padding:4px 4px 4px 12px;border:1px solid var(--u-line-2,rgba(255,255,255,.16));border-radius:var(--u-r-ctl,6px);background:var(--u-inset,#0b0a0d)}',
@@ -92,7 +92,10 @@
     // hover only where there is a pointer
     '@media(hover:hover) and (pointer:fine){.ua-btn:hover{background:var(--u-acc-hi,#4b1288)}.ua__ib:hover{background:rgba(255,255,255,.14)}.ua__sugg button:hover,.ua__src a:hover{border-color:var(--u-text-3,#b7b7bd);color:var(--u-text,#fff)}.ua__more summary:hover{color:var(--u-text,#fff)}.ua__hit:hover b{text-decoration:underline;text-underline-offset:2px}.ua__hint{display:inline}}',
     // a phone or a short window: the card is the screen; place() keeps it inside the visual viewport so the composer rides on the keyboard
-    '@media(max-width:640px),(max-height:520px){.ua{top:0;left:0;right:0;width:auto;max-width:none;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}.ua__h{padding-top:calc(8px + env(safe-area-inset-top,0px))}.ua__row--me .ua__m{max-width:88%}.ua--kb .ua__note{display:none}html.ua-lock,html.ua-lock body{overflow:hidden}}',
+    // the content keeps a 720px reading column when that screen is wide (a short laptop window, a turned phone)
+    '@media(max-width:640px),(max-height:520px){.ua{top:0;left:0;right:0;width:auto;max-width:none;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}' +
+      '.ua__h{padding:calc(8px + env(safe-area-inset-top,0px)) max(8px,calc(50% - 360px)) 8px max(16px,calc(50% - 360px))}.ua__t{padding-left:max(16px,calc(50% - 360px));padding-right:max(16px,calc(50% - 360px))}' +
+      '.ua__f,.ua__note{padding-left:max(12px,calc(50% - 360px));padding-right:max(12px,calc(50% - 360px))}.ua__row--me .ua__m{max-width:88%}.ua--kb .ua__note{display:none}html.ua-lock,html.ua-lock body{overflow:hidden}}',
     '@keyframes ua-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes ua-fade{from{opacity:0}to{opacity:1}}',
     '@keyframes ua-dot{0%,80%,100%{opacity:.25}40%{opacity:1}}',
     // reduced motion: the change stays (fades), the travel goes
@@ -145,8 +148,13 @@
       return fetch(window.uglFn('content'), { method: 'POST', headers: { Authorization: 'Bearer ' + tok, apikey: cfg.key, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'open', module: 'ask', path: 'ask/index.json', part: 'index', signals: sig }) })
         .then(function (res) { return res.json().then(function (j) { if (!res.ok) throw new Error(j.reason || j.error || 'blocked'); return fetch(j.url); }); })
-        .then(function (res) { return res.json(); })
-        .then(function (data) { try { sessionStorage.setItem('ugl-ask-index', JSON.stringify(data)); } catch (e) {} index = prepare(data); return index; });
+        .then(function (res) { if (!res.ok) throw new Error('index'); return res.json(); })
+        .then(function (data) {
+          // A storage error is not an index: never keep it, so the next question tries again.
+          if (!data || !data.passages || !data.passages.length) throw new Error('index');
+          try { sessionStorage.setItem('ugl-ask-index', JSON.stringify(data)); } catch (e) {}
+          index = prepare(data); return index;
+        });
     });
     loading.catch(function () { loading = null; });
     return loading;
@@ -162,15 +170,16 @@
         .then(function (res) { return res.json().then(function (j) { j._status = res.status; return j; }); });
     }).catch(function () { return { error: 'busy' }; });
   }
-  // Whether the AI helper is switched on: the ask function's GET answers without a sign-in. Once per tab.
+  // Whether the AI helper is switched on: the ask function's GET answers without a sign-in. "On" is kept for
+  // the tab; "off" is asked again on the next page, so switching the key on shows without a new tab.
   var health = null;
   function aiHealth() {
     if (health) return health;
-    try { var c = sessionStorage.getItem('ugl-ask-health'); if (c) return (health = Promise.resolve(JSON.parse(c))); } catch (e) {}
+    try { if (sessionStorage.getItem('ugl-ask-health') === 'on') return (health = Promise.resolve({ helper: true })); } catch (e) {}
     if (!window.uglFn) return Promise.resolve({});
-    health = fetch(window.uglFn('ask')).then(function (r) { return r.json(); }).then(function (j) {
-      try { sessionStorage.setItem('ugl-ask-health', JSON.stringify({ helper: !!j.helper })); } catch (e) {}
-      return j;
+    health = fetch(window.uglFn('ask')).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+      if (j && j.helper === true) { try { sessionStorage.setItem('ugl-ask-health', 'on'); } catch (e) {} }
+      return j || {};
     }).catch(function () { health = null; return {}; });
     return health;
   }
@@ -197,8 +206,12 @@
     return u ? '<a class="ua__cite" href="' + esc(href(u)) + '" aria-label="Source ' + n + ': ' + esc(t) + '" title="' + esc(t) + '">' + n + '</a>' : '<span class="ua__cite">' + n + '</span>';
   }
   // One passage as a card: its number (the one the helper cites), title, the matching bit of its text, the link.
+  // A screen reader names the link by its title and reads the snippet as its description.
+  var uid = 0;
   function hitHtml(h, q, n) {
-    return '<a class="ua__hit" href="' + esc(href(h.p.u)) + '"><b>' + (n ? '<span class="ua__cite" aria-hidden="true">' + n + '</span>' : '') + esc(h.p.t) + '</b><span>' + snippet(h.p, q) + '</span><small>Open the page →</small></a>';
+    var id = 'ua-s' + Date.now().toString(36) + (++uid);
+    return '<a class="ua__hit" href="' + esc(href(h.p.u)) + '" aria-label="' + (n ? 'Passage ' + n + ': ' : '') + esc(h.p.t) + ', open the page" aria-describedby="' + id + '"><b>' +
+      (n ? '<span class="ua__cite" aria-hidden="true">' + n + '</span>' : '') + esc(h.p.t) + '</b><span id="' + id + '">' + snippet(h.p, q) + '</span><small aria-hidden="true">Open the page →</small></a>';
   }
   function courseHtml(hits, q, fold) {
     var cards = hits.map(function (h, i) { return hitHtml(h, q, i + 1); }).join('');
@@ -207,7 +220,11 @@
   // The helper's answer: every [n] becomes a link to passage n of the ones the function used (a number with
   // no passage stays as text), and the pages it cited follow as "Read it in" chips with the same numbers.
   function answerHtml(text, hits, sources) {
+    // The function asks for plain text; if the model still writes **bold**, "- " lists or [1, 2], show them
+    // as bold, bullets and one mark per passage (after escaping, so nothing it writes becomes markup).
+    text = String(text || '').replace(/\[(\d{1,2}(?:\s*,\s*\d{1,2})+)\]/g, function (m, g) { return g.split(/\s*,\s*/).map(function (n) { return '[' + n + ']'; }).join(''); });
     var body = esc(text).split(/\n+/).map(function (l) {
+      l = l.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^\s*[-*•]\s+/, '• ');
       return '<p>' + l.replace(/\[(\d{1,2})\]/g, function (m, n) { var h = hits[+n - 1]; return h ? cite(n, h.p.u, h.p.t) : m; }) + '</p>';
     }).join('');
     var chips = (sources || []).map(function (s) {
@@ -255,6 +272,8 @@
       r.innerHTML = (me ? '' : '<span class="ua__ava">' + ICON + '</span>') + '<div class="ua__m' + (me ? ' ua__m--me' : '') + '">' + html + '</div>';
       t.appendChild(r); t.scrollTop = t.scrollHeight; return r;
     }
+    // The "looking in the course" row of a question still out; render() puts it back if the card is reopened.
+    var pending = null;
     function render() {
       t.innerHTML = '';
       if (!thread.length) {
@@ -264,6 +283,15 @@
         t.appendChild(tryBox);
       }
       thread.forEach(function (m) { add(m.me, m.html, true); });
+      if (pending) t.appendChild(pending);
+    }
+    // The latest exchange from its question down, when the question and the start of its answer fit together.
+    function showLatest() {
+      var rows = t.querySelectorAll('.ua__row'), last = rows[rows.length - 1];
+      if (!last || !thread.length) { t.scrollTop = 0; return; }
+      var q = last.classList.contains('ua__row--me') ? last : last.previousElementSibling;
+      var anchor = q && q.classList && q.classList.contains('ua__row--me') && last.offsetTop - q.offsetTop + 160 < t.clientHeight ? q : last;
+      t.scrollTop = Math.max(0, anchor.offsetTop - t.offsetTop - 8);
     }
     function keepFocusInside() { if (doc.activeElement === send || !box.contains(doc.activeElement)) box.focus({ preventScroll: true }); }
     function answer(q) {
@@ -273,8 +301,9 @@
       var mine = thread;
       inp.value = ''; inp.style.height = '';
       if (!thread.length) t.innerHTML = '';
-      thread.push({ me: true, html: esc(q) }); add(true, esc(q)); keep();
-      var wait = add(false, '<div class="ua__wait" role="status"><span class="ua__dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="ua__wait-t">Looking in the course…</span></div>');
+      // Your own message and the waiting row show at once (they answer a key or a tap); only the reply fades in.
+      thread.push({ me: true, html: esc(q) }); add(true, esc(q), true); keep();
+      var wait = pending = add(false, '<div class="ua__wait" role="status"><span class="ua__dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="ua__wait-t">Looking in the course…</span></div>', true);
       keepFocusInside();
       send.disabled = true;
       loadIndex().then(function () {
@@ -299,11 +328,13 @@
       function done(html) {
         // New chat was pressed while this one was out: its answer belongs to the old thread.
         if (thread !== mine) return;
+        if (pending === wait) pending = null;
         thread.push({ me: false, html: html }); keep();
-        var row = add(false, html); send.disabled = false;
-        // Show the start of the answer, not the end of its passages; keep the keyboard down on a phone.
-        t.scrollTop = Math.max(0, row.offsetTop - t.offsetTop - 8);
-        if (fine()) inp.focus(); else keepFocusInside();
+        add(false, html); send.disabled = false;
+        // The question and the start of the answer, not the end of its passages.
+        showLatest();
+        // On a phone the keyboard goes down so the answer can be read (the field keeps it up otherwise).
+        if (fine()) inp.focus(); else if (doc.activeElement === inp) box.focus({ preventScroll: true }); else keepFocusInside();
       }
     }
     form.addEventListener('submit', function (e) { e.preventDefault(); answer(inp.value); });
@@ -315,7 +346,7 @@
       if (a) { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && !e.button) close(true); return; }
       var b = e.target.closest('.ua__sugg button'); if (b) answer(b.textContent);
     });
-    box.querySelector('.ua__new').addEventListener('click', function () { thread = []; keep(); send.disabled = false; render(); if (fine()) inp.focus(); });
+    box.querySelector('.ua__new').addEventListener('click', function () { thread = []; keep(); pending = null; send.disabled = false; render(); if (fine()) inp.focus(); });
     // A deck turns arrows, space and Enter into slide moves; inside the card they are typing.
     box.addEventListener('keydown', function (e) { if (NAV_KEYS[e.key] && !e.ctrlKey && !e.metaKey && !e.altKey) e.stopPropagation(); });
 
@@ -332,7 +363,8 @@
         var atEnd = t.scrollHeight > t.clientHeight && t.scrollHeight - t.scrollTop - t.clientHeight < 40;
         box.style.top = top + 'px'; box.style.height = vh + 'px'; box.style.right = ''; box.style.width = '';
         box.style.transformOrigin = (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2 - top) + 'px';
-        box.classList.toggle('ua--kb', !!vv && vv.height < win.screen.height * 0.6);
+        // An on-screen keyboard shrinks only the visual viewport: then the note gives its line to the thread.
+        box.classList.toggle('ua--kb', !fine() && !!vv && vv.height < win.innerHeight - 100);
         if (atEnd) t.scrollTop = t.scrollHeight;
       } else {
         var gap = 8, below = vh - r.bottom - gap - 16, above = r.top - gap - 16, up = below < 360 && above > below;
@@ -362,26 +394,31 @@
       if (on && !inert.length) { [].slice.call(doc.body.children).forEach(function (el) { if (el !== box && !el.hasAttribute('inert')) { el.setAttribute('inert', ''); inert.push(el); } }); }
       if (!on) { inert.forEach(function (el) { el.removeAttribute('inert'); }); inert = []; }
     }
-    function open(from) {
+    function open(from, instant) {
       // A press during the close animation reopens; a press while open does nothing (the button toggles).
       if (closing) { clearTimeout(closing); closing = null; } else if (!box.hidden) return;
       opener = from || btn; render();
       box.hidden = false; box.classList.remove('is-instant'); mode = null; place();
-      t.scrollTop = thread.length ? t.scrollHeight : 0;
+      showLatest();
+      // Opened from the keyboard it is there at once (DESIGN.md: nothing moves on keyboard actions);
+      // a tap or a click grows it out of the button.
+      if (instant) { box.classList.add('is-instant'); btn.style.transition = 'none'; }
       btn.classList.add('is-on'); btn.setAttribute('aria-expanded', 'true');
       void box.offsetWidth; box.classList.add('is-open');
+      if (instant) { void box.offsetWidth; box.classList.remove('is-instant'); btn.style.transition = ''; }
       doc.addEventListener('keydown', onKey, true);
       win.addEventListener('resize', place);
       if (win.visualViewport) { win.visualViewport.addEventListener('resize', place); win.visualViewport.addEventListener('scroll', place); }
       // The field only on a pointer device: on a phone the suggestions show before the keyboard.
       var focus = function () { if (box.hidden) return; if (fine()) inp.focus(); else box.focus({ preventScroll: true }); };
-      if (reduce()) focus(); else setTimeout(focus, 210);
+      if (instant || reduce()) focus(); else setTimeout(focus, 210);
     }
     function after() {
       closing = null;
       var inside = !doc.activeElement || doc.activeElement === doc.body || box.contains(doc.activeElement);
       box.hidden = true; box.classList.remove('is-instant');
       if (inside && opener && opener.focus) { try { opener.focus({ preventScroll: true }); } catch (e) { opener.focus(); } }
+      try { btn.dispatchEvent(new Event('ua-closed')); } catch (e) {}
     }
     function close(instant) {
       if (box.hidden) return;
@@ -396,7 +433,7 @@
       lock(false); mode = null;
       if (instant) after(); else closing = setTimeout(after, 160);
     }
-    box.querySelector('.ua__x').addEventListener('click', function () { close(false); });
+    box.querySelector('.ua__x').addEventListener('click', function (e) { close(e.detail === 0); });
     return { open: open, close: close, isOpen: function () { return !box.hidden && !closing; } };
   }
   var panels = [];
@@ -417,6 +454,8 @@
         // A deck whose theme switch floats: sit just left of it, and step further left past any of the deck's
         // own links or buttons there (its "Course menu" on a phone), never on top of them.
         var put = function () {
+          // While the card is open it covers the deck (and the page is inert on a phone): measure again on close.
+          if (btn.getAttribute('aria-expanded') === 'true') return;
           var r = theme.getBoundingClientRect(); if (!r.width) return;
           var de = doc.documentElement, cw = doc.compatMode === 'CSS1Compat' && de.clientWidth ? de.clientWidth : win.innerWidth;
           var s = r.height, left = r.left - 10 - s;
@@ -424,7 +463,7 @@
             var hit = null;
             [left + 2, left + s / 2, left + s - 2].some(function (x) {
               return (doc.elementsFromPoint ? doc.elementsFromPoint(x, r.top + s / 2) : []).some(function (el) {
-                if (el === btn || btn.contains(el)) return false;
+                if (el === btn || btn.contains(el) || (el.closest && el.closest('.ua'))) return false;
                 var a = el.closest && el.closest('a[href],button,input,select,textarea,[role="button"]');
                 if (a && a !== btn) { hit = a; return true; }
                 return false;
@@ -435,11 +474,12 @@
           }
           btn.style.top = r.top + 'px'; btn.style.right = Math.max(0, cw - left - s) + 'px'; btn.style.width = btn.style.height = s + 'px';
         };
-        put(); win.addEventListener('resize', put); win.addEventListener('load', put); setTimeout(put, 600);
+        put(); win.addEventListener('resize', put); win.addEventListener('load', put); btn.addEventListener('ua-closed', put); setTimeout(put, 600);
       }
     }
     var panel = null;
-    btn.addEventListener('click', function () { if (!panel) panel = build(doc, btn); if (panel.isOpen()) panel.close(false); else panel.open(btn); });
+    // A click with no pointer behind it (Enter or Space on the button) opens and closes without motion.
+    btn.addEventListener('click', function (e) { var kb = e.detail === 0; if (!panel) panel = build(doc, btn); if (panel.isOpen()) panel.close(kb); else panel.open(btn, kb); });
     panels.push(btn);
   }
   window.uglAssist = { mount: mount, search: function (q, k) { return loadIndex().then(function () { return search(q, k); }); } };

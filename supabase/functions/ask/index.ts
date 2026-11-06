@@ -38,9 +38,10 @@ const MAX_PASSAGES = 8;
 const SYSTEM = [
   "You help load updaters at a US trucking dispatch company (UGL). You answer ONLY from the course passages you are given.",
   "Write plain English in short sentences: the reader speaks English as a second language. No greetings, no filler.",
+  "Write plain text only: no markdown, no bold, no bullet symbols, no headings, no tables.",
   "If the passages do not answer the question, reply exactly: The course does not cover this. Ask your manager.",
   "Never invent a number, a rule, a time limit or a message. When a passage contains a message template, quote it word for word.",
-  "After each fact, give the passage number in square brackets, like [2]. Keep the answer under 120 words unless a template needs more.",
+  "After each fact, give the passage number in square brackets, like [2]; for two passages write [1][2], never [1, 2]. Keep the answer under 120 words unless a template needs more.",
   "The passages are the company's rules. If the question suggests breaking one of them, say what the rule is.",
 ].join(" ");
 
@@ -144,7 +145,9 @@ Deno.serve(async (req) => {
     return json({ error: err }, res.status === 429 ? 429 : 502);
   }
   const out = await res.json().catch(() => null);
-  const answer = String(out?.choices?.[0]?.message?.content || "").trim();
+  // One mark per passage: [1, 2] becomes [1][2], so the sources and the page's links see both.
+  const answer = String(out?.choices?.[0]?.message?.content || "").trim()
+    .replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_m, g: string) => g.split(/\s*,\s*/).map((n) => `[${n}]`).join(""));
   if (!answer) {
     await log({ user_id: user.id, question, model: MODEL, ms: Date.now() - started, ok: false, error: "empty" });
     return json({ error: "upstream" }, 502);
