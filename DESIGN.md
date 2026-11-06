@@ -22,7 +22,8 @@ readable sizes, surfaces are lightness steps, and nothing decorates. Every value
 Where each colour may appear:
 
 - **Amethyst** is a field, not a highlight: the sign-in gate, the stop's hero band, the next-stop block,
-  the helper's button and panel header, the faint tint behind a rule callout, the mile numeral. Never on
+  the helper's robot button, its card header and your own questions in it, the faint tint behind a rule
+  callout, the mile numeral. Never on
   ordinary buttons, tabs or navigation.
 - **Cyan** is the one live hue and the only colour on data: the trip meter and progress meters, the
   current and finished markers on the road and the strip, focus rings, links inside text, the selected
@@ -33,7 +34,7 @@ Where each colour may appear:
   (`.btn--primary`); everything else is a quiet button on `--u-surface-2` with a 1px line. The active
   tab is the brighter label, not a filled pill.
 - **No gradients, no glass or blur, no glow, no shadow on anything at rest.** A shadow belongs only to
-  what floats: the zoom overlay, the toast, the helper panel, a menu.
+  what floats: the zoom overlay, the toast, the helper card, a menu.
 
 ## Type
 
@@ -61,11 +62,12 @@ Where each colour may appear:
 
 ## Motion
 
-Motion is feedback, never decoration: a press, a hover on a pointer device, a panel sliding in, a
-toast. Transform and opacity only, `ease-out` curves, under 300ms for interface motion, nothing on
+Motion is feedback, never decoration: a press, a hover on a pointer device, the helper card growing
+out of its button, a toast. Transform and opacity only, `ease-out` curves, under 300ms for interface motion, nothing on
 keyboard-driven actions, and every move has a reduced-motion fallback that keeps the change and drops
 the travel. Curves and durations: `--ease-out: cubic-bezier(.23,1,.32,1)`, `--ease-drawer:
-cubic-bezier(.32,.72,0,1)`; press 120ms, tooltip 150ms, drawer 260ms.
+cubic-bezier(.32,.72,0,1)`; press 120ms, tooltip 150ms, the helper card 200ms in and 150ms out (it
+scales from .96 at the robot button, never slides in from an edge).
 
 ## Checking it
 

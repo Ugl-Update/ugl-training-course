@@ -1,7 +1,8 @@
 // Ask the Course: answers an updater's question from the course text only.
 //
-// POST { question, passages: [passage ids] } -> { answer, sources: [{ t, u }], remaining }
+// POST { question, passages: [passage ids] } -> { answer, sources: [{ t, u }], ids, remaining }
 //                                             |  { error: "not-configured" | "limit" | "busy" | "signin" | ... }
+//      ids: the passages the answer's [1], [2]... refer to, in that order (the ones the server found)
 // GET                                        -> { ok, stage, helper (the key is set), model, index (the index loads) }
 //                                                a health line for launch checks and the admin; it needs no sign-in
 //
@@ -65,7 +66,7 @@ function cors(origin: string | null, stage: Stage) {
   return {
     "Access-Control-Allow-Origin": origin && ORIGINS.includes(origin) ? origin : ORIGINS[0],
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };
@@ -154,5 +155,5 @@ Deno.serve(async (req) => {
   const seen = new Set<string>();
   const sources = pick.filter((p) => !seen.has(p.u + p.t) && seen.add(p.u + p.t)).map((p) => ({ t: p.t, u: p.u }));
   await log({ user_id: user.id, question, answer, sources, model: MODEL, ms: Date.now() - started, ok: true });
-  return json({ answer, sources, remaining: Math.max(0, DAILY - used - 1) });
+  return json({ answer, sources, ids: passages.map((p) => p.id), remaining: Math.max(0, DAILY - used - 1) });
 });
