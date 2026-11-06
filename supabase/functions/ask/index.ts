@@ -2,6 +2,8 @@
 //
 // POST { question, passages: [passage ids] } -> { answer, sources: [{ t, u }], remaining }
 //                                             |  { error: "not-configured" | "limit" | "busy" | "signin" | ... }
+// GET                                        -> { ok, stage, helper (the key is set), model, index (the index loads) }
+//                                                a health line for launch checks and the admin; it needs no sign-in
 //
 // The page (pages/ask.html, built by tools/road.py) searches the course itself and sends the ids of
 // the best passages; the text of those passages is taken from the server's copy of the index
@@ -78,6 +80,7 @@ Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors(origin, stage), "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin, stage) });
+  if (req.method === "GET") return json({ ok: true, stage, helper: !!Deno.env.get("GROQ_API_KEY"), model: MODEL, index: !!(await loadIndex(stage)) });
   if (req.method !== "POST") return json({ error: "method" }, 405);
   if (!origin || !STAGES[stage].origins.includes(origin)) return json({ error: "origin" }, 403);
 
