@@ -58,7 +58,7 @@ In the private repo, `sources/legacy/` holds the older "Policy and Charges" docu
 
 ## Work Simulator
 
-- Cases live in `sources/simulator-cases.json`. Each case is a short shift: messages arrive by email or Telegram and the trainee either picks an answer (`choice`) or writes a reply (`reply`) that is checked against rubric points.
+- Cases live in `sources/simulator-cases.json`. Each case is a short stretch of work: messages arrive by email or Telegram and the trainee either picks an answer (`choice`) or writes a reply (`reply`) that is checked against rubric points.
 - The Simulator is hidden (`hidden: true` in `ugl-catalog.js`) until the real cases are ready. To show it: build, upload `pages/simulator.html`, and remove both `hidden` flags.
 - After changing cases: `python3 tools/build_content.py`, then upload `upload-to-supabase/pages/simulator.html` to the bucket's `pages` folder (replace the old one).
 - Results: Table Editor → `sim_results`. One row per finished case with the user, score, and every answer they gave, including the emails and messages they wrote.

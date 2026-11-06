@@ -1,6 +1,6 @@
 # How the site looks, and why
 
-The course is a tool people work in on a phone, mid-shift, in a second language. The look follows the
+The course is a tool people work in on a phone, in the middle of their work, in a second language. The look follows the
 rules of a working screen, not of a landing page: colour goes on data and state, type is one face at
 readable sizes, surfaces are lightness steps, and nothing decorates. Every value below is a token in
 `ugl-site.css`; pages, tools, decks and diagrams read the tokens and never name a colour.

@@ -36,7 +36,7 @@ window.UGL_CATALOG = {
     { id: 'road-5',             section: 'course', media: true, track: 'road',       kind: 'stop',   tag: 'Stage 5',    title: 'Pickup email and Good to Go',                   path: 'pages/road-5.html',  desc: 'Which pictures go to the broker for each trailer type, and Good to Go in writing.' },
     { id: 'road-6',             section: 'course', track: 'road',       kind: 'stop',   tag: 'Stage 6',    title: 'In transit',                                    path: 'pages/road-6.html',  desc: 'The 200-mile line, traffic and weather updates, the ETA, and a late truck.' },
     { id: 'road-7',             section: 'course', track: 'road',       kind: 'stop',   tag: 'Stage 7',    title: 'At the receiver: unloading, lumper and late fees', path: 'pages/road-7.html', desc: 'Drop pictures, the lumper and late fee flow, Relay payment and EFS requests.' },
-    { id: 'road-8',             section: 'course', track: 'road',       kind: 'stop',   tag: 'Stage 8',    title: 'After unloading',                               path: 'pages/road-8.html',  desc: 'Read the POD, send it to the broker immediately, and close the load.' },
+    { id: 'road-8',             section: 'course', track: 'road',       kind: 'stop',   tag: 'Stage 8',    title: 'After unloading',                               path: 'pages/road-8.html',  desc: 'Read the POD, send it to the broker immediately after delivery, and close the load.' },
     { id: 'road-po',            section: 'course', media: true, track: 'road',       kind: 'stop',   tag: 'Power only', title: 'Power only, hook and drop, customer rules',     path: 'pages/road-po.html', desc: 'Broker trailers and their papers, the 5 hook-and-drop patterns, USPS and Al Amin.' },
 
     // ---- Course: the library
