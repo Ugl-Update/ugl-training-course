@@ -16,9 +16,9 @@
 // a request from outside the course page, lessons pulled faster than anyone reads) blocks the
 // account itself, and so does the third print / save attempt within a day (the first two get a
 // warning). A "copy" event is a copy of more than 500 characters that the page stopped: it is kept
-// for the admin page and never counts toward a block. Admins are never blocked automatically. Each auto-block is logged as
-// security_events kind "auto-block" and emailed to the admin when RESEND_API_KEY and ALERT_EMAIL
-// are set (ALERT_FROM optional).
+// for the admin page and never counts toward a block. Admins are never blocked automatically.
+// Each auto-block is logged as security_events kind "auto-block" and emailed to the admin when
+// RESEND_API_KEY and ALERT_EMAIL are set (ALERT_FROM optional).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
