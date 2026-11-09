@@ -79,14 +79,32 @@
         toast(what + ' ' + (left <= 1 ? 'Last warning: one more attempt today blocks your access.' : 'Warning ' + a.strikes + ' of ' + (a.limit - 1) + ': attempt ' + a.limit + ' today blocks your access.'), 9000);
       });
     }
-    // An event can land on a text node (a drag of selected text); the checks below need its element.
+    // An event or a selection can sit on a text node; the checks below need its element.
     function elOf(t) { return t && t.nodeType === 3 ? t.parentElement : t; }
-    // Inputs, and the message templates ([data-copy-ok]): text that is meant to be pasted into an email.
-    function editable(t) { t = elOf(t); return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [data-copy-ok]'); }
-    function media(t) { t = elOf(t); return t && t.closest && t.closest('img, picture, video, audio, canvas, svg'); }
-    function selected() { return String(window.getSelection ? window.getSelection() : ''); }
+    function within(t, sel) { t = elOf(t); return t && t.closest ? t.closest(sel) : null; }
+    // Form fields hold the trainee's own text: they always copy.
+    function field(t) { return within(t, 'input, textarea, select, [contenteditable="true"]'); }
+    function media(t) { return within(t, 'img, picture, video, audio, canvas, svg'); }
+    function selection() { return window.getSelection ? window.getSelection() : null; }
+    function selected() { var s = selection(); return s ? String(s) : ''; }
+    // A message template ([data-copy-ok]) is meant to be pasted into an email: it copies whole, but only
+    // while the whole selection stays inside it. A selection that starts in one and runs on into the
+    // lesson is held to the limit like any other.
+    function inTemplate() {
+      var s = selection(), n = s ? s.rangeCount : 0;
+      for (var i = 0; i < n; i++) if (!within(s.getRangeAt(i).commonAncestorContainer, '[data-copy-ok]')) return false;
+      return n > 0;
+    }
     // Characters as a reader counts them: line breaks and runs of spaces count once.
     function size(text) { return text.replace(/\s+/g, ' ').trim().length; }
+    // Whether a right-click landed on the selected text itself, not on a button or a link beside it.
+    function onSelection(e) {
+      var s = selection(), i, j, r;
+      for (i = 0; s && i < s.rangeCount; i++)
+        for (r = s.getRangeAt(i).getClientRects(), j = 0; j < r.length; j++)
+          if (e.clientX >= r[j].left && e.clientX <= r[j].right && e.clientY >= r[j].top && e.clientY <= r[j].bottom) return true;
+      return false;
+    }
 
     var style = document.createElement('style');
     style.textContent = CSS;
@@ -101,7 +119,7 @@
     // A short copy goes through untouched. A long one is stopped and logged (kind "copy", which the
     // gateway keeps for the admin page but never counts toward a block).
     function tooLong(e, via) {
-      if (editable(e.target)) return false;
+      if (field(e.target) || inTemplate()) return false;
       var text = selected(), n = size(text);
       if (n <= COPY_MAX) return false;
       e.preventDefault();
@@ -111,13 +129,18 @@
     }
     document.addEventListener('copy', function (e) { tooLong(e, 'copy'); }, true);
     document.addEventListener('cut', function (e) { tooLong(e, 'cut'); }, true);
-    // The menu stays for selected text (its Copy obeys the same limit) and for a phone's long press,
-    // which is how a phone selects text. Elsewhere it would offer Save as and View source.
-    var lastPointer = '';
+    // The menu stays in two cases: a right-click on the selected text itself, when that text may be
+    // copied (the menu then shows Copy, not Save as or View source); and a long press on a phone or
+    // tablet, which is how a touch screen selects text. Everywhere else it is turned off.
+    var lastPointer = '', touchOnly = window.matchMedia ? window.matchMedia('(hover: none)') : null;
     window.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType || ''; }, { passive: true, capture: true });
     document.addEventListener('contextmenu', function (e) {
-      if (editable(e.target)) return;
-      if (!media(e.target) && (selected().trim() || (e.pointerType || lastPointer) === 'touch')) return;
+      if (field(e.target)) return;
+      if (!media(e.target)) {
+        var text = selected();
+        if (text.trim() && (inTemplate() || size(text) <= COPY_MAX) && onSelection(e)) return;
+        if ((e.pointerType || lastPointer) === 'touch' && touchOnly && touchOnly.matches) return;
+      }
       e.preventDefault();
     }, true);
     // Pictures never drag out; selected text drags out under the same limit as a copy.

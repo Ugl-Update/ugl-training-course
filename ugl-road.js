@@ -128,7 +128,9 @@ window.UGLRoadDrills = function () {
   function result(i, ok) { if (!(i in first)) first[i] = ok; if (ok) solved[i] = true; score(); }
   function fb(card, ok, html) { var f = card.querySelector('.drill__fb'); f.className = 'drill__fb ' + (ok ? 'is-ok' : 'is-bad'); f.innerHTML = html; }
   function lock(card) { [].forEach.call(card.querySelectorAll('button, input, textarea'), function (x) { x.disabled = true; }); }
-  function norm(s) { return String(s).toLowerCase().replace(/[$°,]/g, '').replace(/\bf\b/g, '').replace(/\s+/g, ' ').trim(); }
+  // A blank is compared loosely: case, $, °, %, a thousands comma, F after a temperature and extra spaces
+  // do not matter; a comma between words counts as a space ("Amarillo,TX").
+  function norm(s) { return String(s).toLowerCase().replace(/,(?!\d)/g, ' ').replace(/[$°,%]/g, '').replace(/\bf\b|(\d)f\b/g, '$1').replace(/\s+/g, ' ').trim(); }
 
   function bind(card, i) {
     var d = JSON.parse(card.querySelector('script').textContent), tries = 0;
@@ -250,7 +252,7 @@ window.UGLRoadDrills = function () {
     } else {
       var ta = card.querySelector('textarea');
       card.querySelector('.drill__check').addEventListener('click', function () {
-        var t = ta.value;
+        var t = ta.value.replace(/\s+/g, ' ');   // a double space or a line break never breaks a checked phrase
         if (t.trim().length < 8) { fb(card, false, 'Write the message first.'); return; }
         function hit(r) { return new RegExp(r[0], 'i').test(t); }
         var miss = d.need.filter(function (r) { return !hit(r); }), bad = d.never.filter(hit), ok = !miss.length && !bad.length;

@@ -155,7 +155,7 @@ def update_tree(part="both"):
         out.append(arrow(380, y0 + 44, 200, 100)); out.append(arrow(380, y0 + 44, 560, 100))
         out.append(node(120, 100, 160, 36, "Rolling")); out.append(node(480, 100, 160, 36, "Stopped"))
         out.append(arrow(200, 136, 110, 180)); out.append(arrow(200, 136, 290, 180))
-        out.append(text(130, 165, "> 50 mi", "dg-m", size=11)); out.append(text(275, 165, "< 50 mi", "dg-m", size=11))
+        out.append(text(128, 160, "> 50 mi", "dg-m", "end", 11)); out.append(text(272, 160, "< 50 mi", "dg-m", "start", 11))
         out.append(leaf(20, 180, 180, "On the way to the shipper", "we will keep you posted"))
         out.append(leaf(210, 180, 180, "…now ___ miles away", "say how many miles"))
         out.append(arrow(560, 136, 560, 180)); out.append(text(600, 165, "> 5 mi, appointment near", "dg-m", "start", 11))
@@ -323,7 +323,7 @@ def pulp():
 
 # ------------------------------------------------------------------ 11. one load, start to finish
 def load_timeline():
-    stops = [("To the shipper", "update, no location"), ("At the shipper", "on site · 2 h · 4 h"), ("Loaded", "checks, stand by"),
+    stops = [("To the shipper", "update the broker"),("At the shipper", "on site · 2 h · 4 h"), ("Loaded", "checks, stand by"),
              ("Pickup email", "Good to Go in writing"), ("In transit", "every 3 hours"), ("At the receiver", "on site · fees"),
              ("Delivered", "POD immediately"), ("Closed", "LOAD# Completed")]
     out = [f'<line x1="40" y1="70" x2="{W - 40}" y2="70" class="dg-bar"/>']
