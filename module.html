@@ -87,7 +87,7 @@
     }
     // Page reports. While leaving a page only a beacon is reliable, and a beacon cannot carry
     // headers, so it sends the sign-in token in its (plain text) body instead. Otherwise the
-    // gateway's answer comes back (copy / print / save: the warning count, or a block).
+    // gateway's answer comes back (print / save: the warning count, or a block).
     function report(kind, detail, leaving) {
       if (!token) return null;
       var body = { action: 'event', kind: kind, module: slug, detail: detail || null };

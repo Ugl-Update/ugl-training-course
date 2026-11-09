@@ -1,9 +1,11 @@
 // Protection for lesson pages, installed by module.html after a lesson is shown.
-// Nothing in a browser can stop someone photographing their screen, so this aims to make copying
-// awkward, mark every page with the viewer's name, and tell the admin when something looks wrong:
-//   - copy, cut, right-click, save, print and view-source are turned off and reported; the gateway
-//     counts copy / print / save attempts, the first two get a warning and the third in a day
-//     blocks the account (opts.onBlocked);
+// Nothing in a browser can stop someone photographing their screen, so this aims to make taking a
+// whole lesson awkward, mark every page with the viewer's name, and tell the admin when something looks wrong:
+//   - copying works for up to COPY_MAX characters at a time (a template, a line, a number). A longer
+//     copy, cut or drag is stopped with a short note and logged for the admin; it never counts toward a block;
+//   - right-click works on selected text (for its Copy) and on a phone's long press, nowhere else;
+//   - save, print and view-source are turned off and reported; the gateway counts those attempts, the
+//     first two get a warning and the third in a day blocks the account (opts.onBlocked);
 //   - a faint watermark with the viewer's username and the date covers the page;
 //   - reading time and whether any mouse, keyboard, touch or scroll happened are reported, so the
 //     admin can spot pages that were "read" by a tool rather than a person.
@@ -35,6 +37,9 @@
     '@media print{body>*:not(.ugl-print){display:none!important}.ugl-print{display:block!important;font:600 18px system-ui,sans-serif;padding:40px;color:#000}}' +
     'img{-webkit-user-drag:none}';
 
+  // The longest copy a lesson allows in one go: enough for any message template.
+  var COPY_MAX = 500;
+
   function el(tag, cls, html) { var e = document.createElement(tag); e.className = cls; if (html) e.innerHTML = html; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
@@ -62,21 +67,26 @@
     var report = opts.report, name = opts.name || 'trainee', last = {};
     // Report each kind at most every 15 seconds so one held key cannot flood the log.
     function once(kind, detail) { var now = Date.now(); if (last[kind] && now - last[kind] < 15000) return null; last[kind] = now; return report(kind, detail); }
-    // Copy, print and save: the gateway counts attempts. Two warnings, the third in a day blocks.
+    // Print and save: the gateway counts attempts. Two warnings, the third in a day blocks.
     function attempt(kind, detail, what) {
-      toast(what + ' This attempt has been reported to the admin.', 6000);
+      toast(what, 6000);
       var p = once(kind, detail);
       if (p && p.then) p.then(function (a) {
         if (!a) return;
         if (a.blocked) { if (opts.onBlocked) opts.onBlocked(a.why); return; }
         if (!a.limit || !a.strikes) return;
         var left = a.limit - a.strikes;
-        toast(what + ' This attempt has been reported to the admin. ' +
-          (left <= 1 ? 'Last warning: one more attempt today blocks your access.' : 'Warning ' + a.strikes + ' of ' + (a.limit - 1) + ': attempt ' + a.limit + ' today blocks your access.'), 9000);
+        toast(what + ' ' + (left <= 1 ? 'Last warning: one more attempt today blocks your access.' : 'Warning ' + a.strikes + ' of ' + (a.limit - 1) + ': attempt ' + a.limit + ' today blocks your access.'), 9000);
       });
     }
+    // An event can land on a text node (a drag of selected text); the checks below need its element.
+    function elOf(t) { return t && t.nodeType === 3 ? t.parentElement : t; }
     // Inputs, and the message templates ([data-copy-ok]): text that is meant to be pasted into an email.
-    function editable(t) { return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [data-copy-ok]'); }
+    function editable(t) { t = elOf(t); return t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [data-copy-ok]'); }
+    function media(t) { t = elOf(t); return t && t.closest && t.closest('img, picture, video, audio, canvas, svg'); }
+    function selected() { return String(window.getSelection ? window.getSelection() : ''); }
+    // Characters as a reader counts them: line breaks and runs of spaces count once.
+    function size(text) { return text.replace(/\s+/g, ' ').trim().length; }
 
     var style = document.createElement('style');
     style.textContent = CSS;
@@ -88,16 +98,34 @@
     document.body.insertBefore(note, document.body.firstChild);
     document.body.appendChild(el('div', 'ugl-print', 'Printing course material is turned off.'));
 
-    function blockCopy(e) {
-      if (editable(e.target)) return;
-      var text = String(window.getSelection ? window.getSelection() : '');
+    // A short copy goes through untouched. A long one is stopped and logged (kind "copy", which the
+    // gateway keeps for the admin page but never counts toward a block).
+    function tooLong(e, via) {
+      if (editable(e.target)) return false;
+      var text = selected(), n = size(text);
+      if (n <= COPY_MAX) return false;
       e.preventDefault();
-      attempt('copy', { chars: text.length, sample: text.slice(0, 80) }, 'Copying course material is not allowed.');
+      toast('You can copy up to ' + COPY_MAX + ' characters at a time. Select less and copy again.', 5000);
+      once('copy', { chars: n, sample: text.replace(/\s+/g, ' ').trim().slice(0, 80), via: via });
+      return true;
     }
-    document.addEventListener('copy', blockCopy, true);
-    document.addEventListener('cut', blockCopy, true);
-    document.addEventListener('contextmenu', function (e) { if (!editable(e.target)) e.preventDefault(); }, true);
-    document.addEventListener('dragstart', function (e) { if (e.target && e.target.tagName === 'IMG') e.preventDefault(); }, true);
+    document.addEventListener('copy', function (e) { tooLong(e, 'copy'); }, true);
+    document.addEventListener('cut', function (e) { tooLong(e, 'cut'); }, true);
+    // The menu stays for selected text (its Copy obeys the same limit) and for a phone's long press,
+    // which is how a phone selects text. Elsewhere it would offer Save as and View source.
+    var lastPointer = '';
+    window.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType || ''; }, { passive: true, capture: true });
+    document.addEventListener('contextmenu', function (e) {
+      if (editable(e.target)) return;
+      if (!media(e.target) && (selected().trim() || (e.pointerType || lastPointer) === 'touch')) return;
+      e.preventDefault();
+    }, true);
+    // Pictures never drag out; selected text drags out under the same limit as a copy.
+    document.addEventListener('dragstart', function (e) {
+      var t = elOf(e.target);
+      if (t && t.tagName === 'IMG') { e.preventDefault(); return; }
+      tooLong(e, 'drag');
+    }, true);
     document.addEventListener('keydown', function (e) {
       if (!(e.ctrlKey || e.metaKey)) return;
       var k = (e.key || '').toLowerCase(), kind = k === 's' ? 'save' : k === 'p' ? 'print' : k === 'u' ? 'save' : '';

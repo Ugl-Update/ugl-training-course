@@ -151,13 +151,13 @@ def update_tree(part="both"):
     def leaf(x, y, w, title, msg):
         return box(x, y, w, 52, "dg-leaf", 8) + text(x + w / 2, y + 20, title, "dg-t", size=12, weight="700") + text(x + w / 2, y + 38, msg, "dg-a", size=11)
     if part == "shipper":
-        out.append(node(280, y0, 200, 44, "On the way to the shipper", "never the current location"))
+        out.append(node(280, y0, 200, 44, "On the way to the shipper"))
         out.append(arrow(380, y0 + 44, 200, 100)); out.append(arrow(380, y0 + 44, 560, 100))
         out.append(node(120, 100, 160, 36, "Rolling")); out.append(node(480, 100, 160, 36, "Stopped"))
         out.append(arrow(200, 136, 110, 180)); out.append(arrow(200, 136, 290, 180))
         out.append(text(130, 165, "> 50 mi", "dg-m", size=11)); out.append(text(275, 165, "< 50 mi", "dg-m", size=11))
-        out.append(leaf(20, 180, 180, "On the way to the shipper", "no miles, no location"))
-        out.append(leaf(210, 180, 180, "…now ___ miles away", "the miles, no location"))
+        out.append(leaf(20, 180, 180, "On the way to the shipper", "we will keep you posted"))
+        out.append(leaf(210, 180, 180, "…now ___ miles away", "say how many miles"))
         out.append(arrow(560, 136, 560, 180)); out.append(text(600, 165, "> 5 mi, appointment near", "dg-m", "start", 11))
         out.append(leaf(470, 180, 230, "___ miles from the shipper", "waiting till the appointment time"))
         out.append(text(W / 2, 262, "On time and the broker asks? \"We will pick up on time.\"", "dg-m", size=12))

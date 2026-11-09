@@ -14,8 +14,9 @@
 //
 // Auto-block: a refusal that can only come from a machine (script, bot, AI or automated browser,
 // a request from outside the course page, lessons pulled faster than anyone reads) blocks the
-// account itself, and so does the third copy / print / save attempt within a day (the first two
-// get a warning). Admins are never blocked automatically. Each auto-block is logged as
+// account itself, and so does the third print / save attempt within a day (the first two get a
+// warning). A "copy" event is a copy of more than 500 characters that the page stopped: it is kept
+// for the admin page and never counts toward a block. Admins are never blocked automatically. Each auto-block is logged as
 // security_events kind "auto-block" and emailed to the admin when RESEND_API_KEY and ALERT_EMAIL
 // are set (ALERT_FROM optional).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -55,11 +56,13 @@ const AUTO_BLOCK: Record<string, string> = {
   "not-the-course-site": "Course material was requested from another website or tool.",
   "too-many-requests": "Too many lessons were pulled in a few minutes.",
   "bulk-download": "Too many lessons were pulled in a few minutes.",
-  "repeated-copy": "Repeated attempts to copy, save or print course material.",
+  // The key keeps its old name: earlier blocks in security_events carry it.
+  "repeated-copy": "Repeated attempts to save or print course material.",
 };
-// Copy, print and save attempts: two warnings, the third within 24 hours blocks. Attempts made
-// before the warnings existed do not count.
-const STRIKE_KINDS = ["copy", "print", "save"];
+// Print and save attempts (view-source counts as save): two warnings, the third within 24 hours
+// blocks. Attempts made before the warnings existed do not count. Copies are not counted: short
+// ones are allowed and long ones are stopped by the page.
+const STRIKE_KINDS = ["print", "save"];
 const STRIKES = 3;
 const STRIKES_SINCE = Date.parse("2026-10-23T03:00:00Z");
 const SITE = "https://ugl-update.github.io/ugl-training-course/";
